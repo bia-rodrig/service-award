@@ -26,5 +26,5 @@ class Employees(Base):
 	employee_name = Column(String)
 	employee_email = Column(String(255), unique=True, nullable=False)
 	hire_date = Column(Date, nullable=False)
-	manager_name = Column(String)
+	manager_name = Column(String, nullable=False)
 	manager_email = Column(String(255), nullable=False)

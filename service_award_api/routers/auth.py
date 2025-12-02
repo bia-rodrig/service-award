@@ -1,18 +1,28 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel, field_validator, EmailStr
 import enum
 from passlib.context import CryptContext
 from starlette import status
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
 
 from models import User
 from database import SessionLocal
 
-router = APIRouter()
+router = APIRouter(
+	prefix='/auth',
+	tags=['auth']
+)
+
+SECRET_KEY = "CauseMauiCanDoAnythingButFloat"
+ALGORITHM = 'HS256'
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 class UserRole(str, enum.Enum):
 	admin = "ADMIN"
@@ -32,6 +42,10 @@ class CreateUserRequest(BaseModel):
 			v = v.upper()
 			return v
 
+class Token(BaseModel):
+	access_token: str
+	token_type: str
+
 def get_db():
 	db = SessionLocal()
 	try:
@@ -49,10 +63,27 @@ def authenticate_user(email: EmailStr, password: str, db):
 	if not bcrypt_context.verify(password, user.hashed_password):
 		return False
 	
-	return True
+	return user
 
+def create_access_token(username: str, user_id: str, expires_delta: timedelta):
+	encode = {'sub': username, 'id': user_id}
+	expires = datetime.now(timezone.utc) + expires_delta
+	encode.update({'exp': expires})
+	return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/auth/", status_code = status.HTTP_201_CREATED)
+async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+	try:
+		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+		email: str = payload.get('sub')
+		user_id: int = payload.get('id')
+
+		if email is None or user_id is None:
+			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, details='Não foi possível validar o usuário')
+		return {'username': email, 'id': user_id}
+	except JWTError:
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, details='Não foi possível validar o usuário')
+
+@router.post("/", status_code = status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
 	create_user_model = User(
 		email = create_user_request.email.upper(),
@@ -73,4 +104,6 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 	
 	if not user:
 		return 'Falha na autenticação'
-	return 'Autenticado com sucesso'
+	
+	token = create_access_token(user.email, user.id, timedelta(days=1))
+	return {'access_token': token, 'token_type': 'bearer'}
