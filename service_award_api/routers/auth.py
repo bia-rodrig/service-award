@@ -65,8 +65,8 @@ def authenticate_user(email: EmailStr, password: str, db):
 	
 	return user
 
-def create_access_token(username: str, user_id: str, expires_delta: timedelta):
-	encode = {'sub': username, 'id': user_id}
+def create_access_token(username: str, user_id: str, role: str, expires_delta: timedelta):
+	encode = {'sub': username, 'id': user_id, 'role': role}
 	expires = datetime.now(timezone.utc) + expires_delta
 	encode.update({'exp': expires})
 	return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -76,6 +76,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 		email: str = payload.get('sub')
 		user_id: int = payload.get('id')
+		user_role: str = payload.get('role')
 
 		if email is None or user_id is None:
 			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, details='Não foi possível validar o usuário')
@@ -85,6 +86,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 
 @router.post("/", status_code = status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
+	existing_email = db.query(User).filter(User.email == create_user_request.email.upper()).first()
+	if existing_email is not None:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='E-mail já cadastrado no sistema')
+	
 	create_user_model = User(
 		email = create_user_request.email.upper(),
 		name = create_user_request.name.upper(),
@@ -98,12 +103,12 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 	db.commit()
 	return {'message': 'Usuário criado com sucesso', 'id': create_user_model.id}
 
-@router.post("/token/")
+@router.post("/token")
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
 	user = authenticate_user(form_data.username.upper(), form_data.password, db)
 	
 	if not user:
 		return 'Falha na autenticação'
 	
-	token = create_access_token(user.email, user.id, timedelta(days=1))
+	token = create_access_token(user.email, user.id, user.role, timedelta(days=1))
 	return {'access_token': token, 'token_type': 'bearer'}
