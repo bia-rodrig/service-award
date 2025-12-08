@@ -13,6 +13,7 @@ from models import Employees, User
 from database import SessionLocal
 from .auth import get_current_user
 from .excel_utils import ExcelProcessor
+from .employee_utils import EmployeeHierarchy
 
 router = APIRouter(
 	prefix='/employees',
@@ -40,11 +41,78 @@ async def get_employee():
 	return {'employees': 'authenticated'}
 
 
+# @router.get('/', status_code=status.HTTP_200_OK)
+# async def get_user_employees(user: user_dependency, db: db_dependency):
+# 	if user is None:
+# 		raise HTTPException(status_code=401, detail='Falha na autenticação')
+# 	return db.query(Employees).filter(Employees.manager_email == user.get('username')).all()
+
+
 @router.get('/', status_code=status.HTTP_200_OK)
 async def get_user_employees(user: user_dependency, db: db_dependency):
+	"""
+	Retorna todos os funcionários da hierarquia do usuário logado
+	Inclui funcionários diretos e indiretos (recursivo)
+	"""
 	if user is None:
 		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	return db.query(Employees).filter(Employees.manager_email == user.get('username')).all()
+	
+	# Busca todos os subordinados recursivamente
+	all_subordinates = EmployeeHierarchy.get_all_subordinates(user.get('username'), db)
+	
+	return {
+		'manager_email': user.get('username'),
+		'total_employees': len(all_subordinates),
+		'employees': all_subordinates
+	}
+
+@router.get('/direct', status_code=status.HTTP_200_OK)
+async def get_direct_reports(user: user_dependency, db: db_dependency):
+	"""
+	Retorna apenas os funcionários DIRETOS do usuário logado
+	"""
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	direct_reports = db.query(Employees).filter(
+		Employees.manager_email == user.get('username')
+	).all()
+	
+	return {
+		'manager_email': user.get('username'),
+		'total_direct_reports': len(direct_reports),
+		'employees': direct_reports
+	}
+
+
+@router.get('/hierarchy-tree', status_code=status.HTTP_200_OK)
+async def get_hierarchy_tree(user: user_dependency, db: db_dependency):
+	"""
+	Retorna a hierarquia em formato de árvore
+	Mostra a estrutura completa com subordinados aninhados
+	"""
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	tree = EmployeeHierarchy.get_hierarchy_tree(user.get('username'), db)
+	
+	return tree
+
+
+@router.get('/hierarchy-levels', status_code=status.HTTP_200_OK)
+async def get_hierarchy_by_levels(user: user_dependency, db: db_dependency):
+	"""
+	Retorna os funcionários organizados por nível hierárquico
+	Nível 1: funcionários diretos
+	Nível 2: funcionários dos funcionários diretos
+	E assim por diante...
+	"""
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	levels = EmployeeHierarchy.get_hierarchy_levels(user.get('username'), db)
+	
+	return levels
 
 
 @router.post('/employee', status_code=status.HTTP_201_CREATED)
