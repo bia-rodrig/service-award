@@ -36,83 +36,16 @@ class EmployeesRequest(BaseModel):
 	employee_email: EmailStr
 	hire_date: date
 
-@router.get('/employees')
-async def get_employee():
-	return {'employees': 'authenticated'}
-
-
-# @router.get('/', status_code=status.HTTP_200_OK)
-# async def get_user_employees(user: user_dependency, db: db_dependency):
-# 	if user is None:
-# 		raise HTTPException(status_code=401, detail='Falha na autenticação')
-# 	return db.query(Employees).filter(Employees.manager_email == user.get('username')).all()
-
-
+# retorna todos os funcionários do usuário logado
 @router.get('/', status_code=status.HTTP_200_OK)
-async def get_user_employees(user: user_dependency, db: db_dependency):
-	"""
-	Retorna todos os funcionários da hierarquia do usuário logado
-	Inclui funcionários diretos e indiretos (recursivo)
-	"""
-	if user is None:
-		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
-	# Busca todos os subordinados recursivamente
-	all_subordinates = EmployeeHierarchy.get_all_subordinates(user.get('username'), db)
-	
-	return {
-		'manager_email': user.get('username'),
-		'total_employees': len(all_subordinates),
-		'employees': all_subordinates
-	}
-
-@router.get('/direct', status_code=status.HTTP_200_OK)
-async def get_direct_reports(user: user_dependency, db: db_dependency):
-	"""
-	Retorna apenas os funcionários DIRETOS do usuário logado
-	"""
-	if user is None:
-		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
-	direct_reports = db.query(Employees).filter(
-		Employees.manager_email == user.get('username')
-	).all()
-	
-	return {
-		'manager_email': user.get('username'),
-		'total_direct_reports': len(direct_reports),
-		'employees': direct_reports
-	}
-
-
-@router.get('/hierarchy-tree', status_code=status.HTTP_200_OK)
 async def get_hierarchy_tree(user: user_dependency, db: db_dependency):
-	"""
-	Retorna a hierarquia em formato de árvore
-	Mostra a estrutura completa com subordinados aninhados
-	"""
+	# retorna a hierarquia aninhada
 	if user is None:
 		raise HTTPException(status_code=401, detail='Falha na autenticação')
 	
 	tree = EmployeeHierarchy.get_hierarchy_tree(user.get('username'), db)
 	
 	return tree
-
-
-@router.get('/hierarchy-levels', status_code=status.HTTP_200_OK)
-async def get_hierarchy_by_levels(user: user_dependency, db: db_dependency):
-	"""
-	Retorna os funcionários organizados por nível hierárquico
-	Nível 1: funcionários diretos
-	Nível 2: funcionários dos funcionários diretos
-	E assim por diante...
-	"""
-	if user is None:
-		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
-	levels = EmployeeHierarchy.get_hierarchy_levels(user.get('username'), db)
-	
-	return levels
 
 
 @router.post('/employee', status_code=status.HTTP_201_CREATED)
@@ -150,7 +83,7 @@ async def create_employee(user: user_dependency, db: db_dependency, employee_req
 
 
 def validate_user_permissions(user: dict, db: Session) -> User:
-	"""Valida se o usuário tem permissão para fazer upload"""
+	# Valida se o usuário tem permissão para fazer upload do arquivo
 	user_data = db.query(User).filter(User.email == user.get('username')).first()
 	if user_data is None:
 		raise HTTPException(status_code=404, detail='Usuário não encontrado')
@@ -162,19 +95,16 @@ def validate_user_permissions(user: dict, db: Session) -> User:
 
 
 def process_employee_row(row_data: dict, row_index: int, db: Session) -> tuple:
-	"""
-	Processa uma linha de dados de funcionário
-	
-	Returns:
-		Tupla (status, message) onde status pode ser 'added', 'updated', 'skipped'
-	"""
+	# Processa uma linha de dados de funcionário
+	# retorna uma Tupla (status, message) onde status pode ser 'added', 'updated', 'skipped'
+
 	# Valida campos obrigatórios
 	if not ExcelProcessor.validate_required_fields(row_data):
 		if any(row_data.values()):
 			return ('skipped', f'Linha {row_index}: Campos obrigatórios faltando')
 		return ('skipped', None)  # Linha vazia, ignora silenciosamente
 	
-	# Converte employee_id
+	# Converte employee_id para integer
 	employee_id = ExcelProcessor.parse_employee_id(row_data['employee_id'])
 	if employee_id is None:
 		return ('skipped', f'Linha {row_index}: Employee ID inválido ({row_data["employee_id"]})')
@@ -310,3 +240,55 @@ async def upload_employees_excel(
 	except Exception as e:
 		db.rollback()
 		raise HTTPException(status_code=500, detail=f'Erro ao processar o arquivo: {str(e)}')
+
+
+@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_employee(user: user_dependency, db: db_dependency, employee_id: int = Path(gt=0)):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	employee_model = db.query(Employees).filter(Employees.id == employee_id)\
+	.filter(Employees.manager_email == user.get('username').upper()).first()
+
+	if employee_model is None:
+		raise HTTPException(status_code=404, detail='Usuário não encontrado.')
+	
+	db.query(Employees).filter(Employees.id == employee_id).delete()
+	db.commit()
+
+@router.delete('/clear_all', status_code=status.HTTP_200_OK)
+async def clear_all_employees(user: user_dependency, db: db_dependency):
+	# apaga todos os funcionários da tabela employees
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	user_data = db.query(User).filter(User.email == user.get('username')).first()
+	if user_data is None:
+		raise HTTPException(status_code=404, detail='Usuário não encontrado')
+	
+	if user_data.role not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem zerar o banco de dados')
+	
+	try:
+		total_employees = db.query(Employees).count()
+		db.query(Employees).delete()
+		db.commit()
+
+		return {
+			'message': 'Todos os funcionários foram removidos com sucesso',
+			'total_deleted': total_employees
+		}
+	except Exception as e:
+		db.rollback()
+		raise HTTPException(
+			status_code=500, 
+			detail=f'Erro ao limpar a tabela: {str(e)}'
+		)
+	
+
+'''
+Falta:
+- botão pra enviar e-mail
+- remover user - user_dependency dentro do próprio auth - declaarei apois o get_current_user
+- editar user - resetar senha
+'''
