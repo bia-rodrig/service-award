@@ -241,21 +241,6 @@ async def upload_employees_excel(
 		db.rollback()
 		raise HTTPException(status_code=500, detail=f'Erro ao processar o arquivo: {str(e)}')
 
-
-@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_employee(user: user_dependency, db: db_dependency, employee_id: int = Path(gt=0)):
-	if user is None:
-		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
-	employee_model = db.query(Employees).filter(Employees.id == employee_id)\
-	.filter(Employees.manager_email == user.get('username').upper()).first()
-
-	if employee_model is None:
-		raise HTTPException(status_code=404, detail='Usuário não encontrado.')
-	
-	db.query(Employees).filter(Employees.id == employee_id).delete()
-	db.commit()
-
 @router.delete('/clear_all', status_code=status.HTTP_200_OK)
 async def clear_all_employees(user: user_dependency, db: db_dependency):
 	# apaga todos os funcionários da tabela employees
@@ -285,6 +270,23 @@ async def clear_all_employees(user: user_dependency, db: db_dependency):
 			detail=f'Erro ao limpar a tabela: {str(e)}'
 		)
 	
+
+
+@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_employee(user: user_dependency, db: db_dependency, employee_id: int = Path(gt=0)):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	employee_model = db.query(Employees).filter(Employees.id == employee_id)\
+	.filter(Employees.manager_email == user.get('username').upper()).first()
+
+	if employee_model is None:
+		raise HTTPException(status_code=404, detail='Usuário não encontrado.')
+	
+	db.query(Employees).filter(Employees.id == employee_id).delete()
+	db.commit()
+
+
 
 '''
 Falta:
