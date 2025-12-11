@@ -126,10 +126,25 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 	user = authenticate_user(form_data.username.upper(), form_data.password, db)
 	
 	if not user:
-		return 'Falha na autenticação'
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail='E-mail ou senha incorretos',
+			headers={"WWW-Authenticate": "Bearer"}
+		)
 	
 	token = create_access_token(user.email, user.id, user.role, timedelta(days=1))
 	return {'access_token': token, 'token_type': 'bearer'}
+
+#lista todos os usuarios
+@router.get('/', response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+async def read_all_users(user: user_dependency, db: db_dependency):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem listar todos os usuários.')
+	
+	return db.query(User).all()
 
 # deleta um usuario
 @router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -147,13 +162,26 @@ async def delete_user(user: user_dependency, db: db_dependency, user_id: int = P
 	db.query(User).filter(User.id == user_id).delete()
 	db.commit()
 
-#lista todos os usuarios
-@router.get('/', response_model=list[UserResponse], status_code=status.HTTP_200_OK)
-async def read_all_users(user: user_dependency, db: db_dependency):
+@router.put('/reset_password/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(user: user_dependency, db: db_dependency, user_id: int = Path(gt=0)):
 	if user is None:
 		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
 	if user.get('role') not in ['ADMIN', 'RH']:
-		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem listar todos os usuários.')
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem remover usuários.')
 	
-	return db.query(User).all()
+	user_model = db.query(User).filter(User.id == user_id).first()
+	if user_model is None:
+		raise HTTPException(status_code=404, detail=f'Usuário de id "{user_id}" não encontrado.')
+
+	hashed_password = bcrypt_context.hash('Espn123') # setta a senha para essa padrão
+
+	user_model.hashed_password = hashed_password
+
+	# atualiza o registro no bando de dados
+	result = db.query(User).filter(User.id == user_id).update(
+		{User.hashed_password: hashed_password},
+		synchronize_session=False
+	)
+
+	db.commit()
+
