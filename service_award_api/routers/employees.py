@@ -291,6 +291,5 @@ async def delete_employee(user: user_dependency, db: db_dependency, employee_id:
 '''
 Falta:
 - botão pra enviar e-mail
-- remover user - user_dependency dentro do próprio auth - declaarei apois o get_current_user
 - editar user - resetar senha
 '''
