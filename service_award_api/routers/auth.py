@@ -4,19 +4,23 @@ from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel, field_validator, EmailStr
 import enum
+from passlib.context import CryptContext
 from starlette import status
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
 from models import User
 from database import SessionLocal
-from security import SECRET_KEY, ALGORITHM, bcrypt_context
 
 router = APIRouter(
 	prefix='/auth',
 	tags=['auth']
 )
 
+SECRET_KEY = "CauseMauiCanDoAnythingButFloat"
+ALGORITHM = 'HS256'
+
+bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
@@ -38,10 +42,18 @@ class CreateUserRequest(BaseModel):
 			v = v.upper()
 			return v
 
+class UserResponse(BaseModel):
+	id: int
+	email: EmailStr
+	name: str
+	surname: str
+	role: str
+	class Config:
+		from_attributes = True
+
 class Token(BaseModel):
 	access_token: str
 	token_type: str
-	is_active: bool
 
 def get_db():
 	db = SessionLocal()
@@ -65,8 +77,8 @@ def authenticate_user(email: EmailStr, password: str, db):
 	return user
 
 # cria chave de acesso
-def create_access_token(username: str, user_id: str, role: str, is_active: bool, expires_delta: timedelta):
-	encode = {'sub': username, 'id': user_id, 'role': role, 'is_active': is_active}
+def create_access_token(username: str, user_id: str, role: str, expires_delta: timedelta):
+	encode = {'sub': username, 'id': user_id, 'role': role}
 	expires = datetime.now(timezone.utc) + expires_delta
 	encode.update({'exp': expires})
 	return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -78,11 +90,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 		email: str = payload.get('sub')
 		user_id: int = payload.get('id')
 		user_role: str = payload.get('role')
-		is_active: bool = payload.get('is_active')
 
 		if email is None or user_id is None:
 			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, details='Não foi possível validar o usuário')
-		return {'username': email, 'id': user_id, 'role': user_role, 'is_active': is_active}
+		return {'username': email, 'id': user_id, 'role': user_role}
 	except JWTError:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, details='Não foi possível validar o usuário')
 
@@ -121,11 +132,56 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 			headers={"WWW-Authenticate": "Bearer"}
 		)
 	
-	token = create_access_token(user.email, user.id, user.role, user.is_active, timedelta(days=1))
-	return {'access_token': token, 'token_type': 'bearer', 'is_active': user.is_active}
+	token = create_access_token(user.email, user.id, user.role, timedelta(days=1))
+	return {'access_token': token, 'token_type': 'bearer'}
 
+#lista todos os usuarios
+@router.get('/', response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+async def read_all_users(user: user_dependency, db: db_dependency):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem listar todos os usuários.')
+	
+	return db.query(User).all()
 
+# deleta um usuario
+@router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(user: user_dependency, db: db_dependency, user_id: int = Path(gt=0)):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem remover usuários.')
 
+	user_model = db.query(User).filter(User.id == user_id).first()
+	
+	if user_model is None:
+		raise HTTPException(status_code=404, detail=f'Usuário de id "{user_id}" não encontrado.')
 
+	db.query(User).filter(User.id == user_id).delete()
+	db.commit()
 
+@router.put('/reset_password/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(user: user_dependency, db: db_dependency, user_id: int = Path(gt=0)):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem remover usuários.')
+	
+	user_model = db.query(User).filter(User.id == user_id).first()
+	if user_model is None:
+		raise HTTPException(status_code=404, detail=f'Usuário de id "{user_id}" não encontrado.')
+
+	hashed_password = bcrypt_context.hash('Espn123') # setta a senha para essa padrão
+
+	user_model.hashed_password = hashed_password
+
+	# atualiza o registro no bando de dados
+	result = db.query(User).filter(User.id == user_id).update(
+		{User.hashed_password: hashed_password},
+		synchronize_session=False
+	)
+
+	db.commit()
 
