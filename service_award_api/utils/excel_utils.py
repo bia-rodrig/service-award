@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Tuple, Optional, List, Dict, Any
 from openpyxl.worksheet.worksheet import Worksheet
 
+
 class ExcelProcessor:
 	"""Classe para processar arquivos Excel de funcionários"""
 	
