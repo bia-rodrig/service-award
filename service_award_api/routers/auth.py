@@ -88,6 +88,18 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 
 user_dependency = Annotated[dict, Depends(get_current_user)] # precisa estar abaixo da função get_current_user
 
+class ChangePasswordRequest(BaseModel):
+	email: EmailStr
+	current_password: str #senha padrão informada peloa dmin
+	new_password: str
+
+	@field_validator("new_password")
+	def validate_new_password(cls, v):
+		if len(v) < 6:
+			raise ValueError("A nova senha deve ter no mínimo 6 caracteres")
+		
+		return v
+
 ## ENDPOINTS
 # cria um novo usuário - aberto para todos
 @router.post("/", status_code = status.HTTP_201_CREATED)
@@ -109,7 +121,7 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 	db.commit()
 	return {'message': 'Usuário criado com sucesso', 'id': create_user_model.id}
 
-#cria o access token no login
+#cria o access token no login - é a função de login
 @router.post("/token")
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
 	user = authenticate_user(form_data.username.upper(), form_data.password, db)
@@ -121,6 +133,36 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 			headers={"WWW-Authenticate": "Bearer"}
 		)
 	
+	if not user.is_active:
+		return{
+			'access_token': None,
+			'token_type': 'bearer',
+			'is_active': False,
+			'message': 'Sua conta está inativa. Troque a senha para ativá-la.'
+		}
+	
 	token = create_access_token(user.email, user.id, user.role, user.is_active, timedelta(days=1))
 	return {'access_token': token, 'token_type': 'bearer', 'is_active': user.is_active}
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password(db: db_dependency, change_request: ChangePasswordRequest):
+	user = authenticate_user(change_request.email, change_request.current_password, db)
+
+	if not user:
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail='Email ou senha atual incorretos'
+		)
+
+	# verifica se o usuário está inativo e precisa trocar a senha
+	if user.is_active:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Usuário já está ativo. Envie e-mail para laboratorio@espn.com para resetar usa senha.')
+	
+	user.hashed_password = bcrypt_context.hash(change_request.new_password)
+	user.is_active = True
+
+	db.commit()
+	db.refresh(user)
+
+	return {'message': 'Senha alterada com sucesso. Faça login com sua nova senha.'}
 
