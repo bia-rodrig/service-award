@@ -1,0 +1,68 @@
+/* ========== CONTAINER PRINCIPAL (TELA TODA) ========== */
+.employees-container {
+  /* Altura mínima = altura da janela inteira */
+  min-height: 100vh;
+  
+  /* MESMO DEGRADÊ AZUL PARA PRETO DO LOGIN */
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #000000 100%);
+  
+  /* Espaçamento interno */
+  padding: 40px;
+}
+
+
+/* ========== TÍTULO "EMPLOYEES" ========== */
+.employees-container h1 {
+  color: white;              /* Texto branco */
+  text-align: center;        /* Centralizado */
+  margin-bottom: 30px;       /* Espaço abaixo */
+  font-size: 32px;           /* Tamanho grande */
+}
+
+
+/* ========== MENSAGEM DE ERRO ========== */
+.error-message {
+  background-color: #ffebee;  /* Fundo vermelho clarinho */
+  color: #c62828;             /* Texto vermelho escuro */
+  padding: 15px;              /* Espaço interno */
+  border-radius: 8px;         /* Cantos arredondados */
+  margin: 0 auto 20px;        /* Centralizado com margem */
+  max-width: 800px;           /* Largura máxima */
+  text-align: center;         /* Texto centralizado */
+}
+
+
+/* ========== CAIXA QUE MOSTRA O JSON ========== */
+.json-display {
+  background-color: white;    /* Fundo branco */
+  color: #333;                /* Texto cinza escuro */
+  padding: 20px;              /* Espaço interno */
+  border-radius: 8px;         /* Cantos arredondados */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);  /* Sombra sutil */
+  
+  /* Largura */
+  max-width: 1200px;          /* Largura máxima */
+  margin: 0 auto;             /* Centralizado */
+  
+  /* Scroll se o conteúdo for muito grande */
+  overflow-x: auto;           /* Scroll horizontal se necessário */
+  max-height: 80vh;           /* Altura máxima = 80% da tela */
+  overflow-y: auto;           /* Scroll vertical se necessário */
+  
+  /* Fonte monoespaçada (tipo código) */
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  
+  /* Preserva formatação */
+  white-space: pre-wrap;      /* Quebra linhas longas */
+  word-wrap: break-word;      /* Quebra palavras longas */
+}
+
+
+/* ========== TEXTO "CARREGANDO..." ========== */
+.employees-container p {
+  color: white;               /* Texto branco */
+  text-align: center;         /* Centralizado */
+  font-size: 18px;            /* Tamanho médio */
+}

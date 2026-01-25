@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel, field_validator, EmailStr
@@ -72,7 +72,14 @@ def create_access_token(username: str, user_id: str, role: str, is_active: bool,
 	return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # pega o usuario que está logado
-async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+async def get_current_user(request: Request):
+	# Pega o token do cookie
+	token = request.cookies.get("access_token")
+	if not token:
+		raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Não foi possível validar o usuário - token não encontrado'
+        )
 	try:
 		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 		email: str = payload.get('sub')
@@ -123,7 +130,7 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 
 #cria o access token no login - é a função de login
 @router.post("/token")
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
+async def login_for_access_token(response: Response, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
 	user = authenticate_user(form_data.username.upper(), form_data.password, db)
 	
 	if not user:
@@ -142,7 +149,17 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 		}
 	
 	token = create_access_token(user.email, user.id, user.role, user.is_active, timedelta(days=1))
-	return {'access_token': token, 'token_type': 'bearer', 'is_active': user.is_active}
+
+	response.set_cookie(
+        key="access_token",           # Nome do cookie
+        value=token,                   # O token JWT
+        httponly=True,                 # JavaScript não consegue acessar
+        secure=False,                  # False em dev, True em produção (HTTPS)
+        samesite="lax",               # Proteção contra CSRF
+        max_age=86400                  # 1 dia (em segundos)
+    )
+
+	return {'token_type': 'bearer', 'is_active': user.is_active} # retorna sem o token, pois já foi setado no cookie
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 async def change_password(db: db_dependency, change_request: ChangePasswordRequest):
@@ -166,3 +183,11 @@ async def change_password(db: db_dependency, change_request: ChangePasswordReque
 
 	return {'message': 'Senha alterada com sucesso. Faça login com sua nova senha.'}
 
+# Endpoint para verificar se o usuário está autenticado
+@router.get("/verify", status_code=status.HTTP_200_OK)
+async def verify_token(user: user_dependency):
+    # Se chegou aqui, o token é válido (get_current_user já validou)
+    return {
+        'authenticated': True,
+        'user': user
+    }

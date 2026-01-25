@@ -1,0 +1,107 @@
+/* ========== CONTAINER PRINCIPAL (TELA TODA) ========== */
+.login-container {
+  /* Flexbox para centralizar o formulário */
+  display: flex;
+  justify-content: center;  /* Centraliza horizontalmente */
+  align-items: center;      /* Centraliza verticalmente */
+  
+  /* Altura mínima = altura da janela inteira */
+  min-height: 100vh;
+  
+  /* DEGRADÊ AZUL PARA PRETO */
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #000000 100%);
+  /* 135deg = diagonal
+     #1e3c72 = azul escuro no início
+     #2a5298 = azul médio no meio
+     #000000 = preto no final */
+}
+
+
+/* ========== CAIXA BRANCA DO FORMULÁRIO ========== */
+.login-box {
+  background: white;
+  padding: 40px;              /* Espaço interno */
+  border-radius: 8px;         /* Cantos arredondados */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);  /* Sombra sutil */
+  width: 100%;                /* Largura 100% do espaço disponível */
+  max-width: 400px;           /* Mas no máximo 400px */
+}
+
+
+/* ========== TÍTULO "LOGIN" ========== */
+.login-box h2 {
+  margin-bottom: 30px;  /* Espaço abaixo do título */
+  text-align: center;   /* Centralizado */
+  color: #333;          /* Cor cinza escuro */
+}
+
+
+/* ========== GRUPO DE CADA CAMPO (EMAIL E SENHA) ========== */
+.form-group {
+  margin-bottom: 20px;  /* Espaço entre os campos */
+}
+
+
+/* ========== LABELS (TEXTOS "E-MAIL:" E "SENHA:") ========== */
+.form-group label {
+  display: block;       /* Ocupa linha inteira */
+  margin-bottom: 5px;   /* Espaço abaixo do label */
+  color: #555;          /* Cor cinza médio */
+  font-weight: 500;     /* Texto semi-negrito */
+}
+
+
+/* ========== INPUTS (CAMPOS DE DIGITAÇÃO) ========== */
+.form-group input {
+  width: 100%;                /* Largura total */
+  padding: 10px;              /* Espaço interno */
+  border: 1px solid #ddd;     /* Borda cinza clara */
+  border-radius: 4px;         /* Cantos levemente arredondados */
+  font-size: 14px;            /* Tamanho da fonte */
+  box-sizing: border-box;     /* Inclui padding/border na largura */
+}
+
+
+/* ========== INPUT QUANDO ESTÁ SELECIONADO (CLICADO) ========== */
+.form-group input:focus {
+  outline: none;              /* Remove borda padrão do navegador */
+  border-color: #4CAF50;      /* Borda fica verde quando focado */
+}
+
+
+/* ========== BOTÃO "ENTRAR" ========== */
+button {
+  width: 100%;                    /* Largura total */
+  padding: 12px;                  /* Espaço interno */
+  background-color: #4CAF50;      /* Cor verde */
+  color: white;                   /* Texto branco */
+  border: none;                   /* Sem borda */
+  border-radius: 4px;             /* Cantos arredondados */
+  font-size: 16px;                /* Tamanho da fonte */
+  cursor: pointer;                /* Cursor vira mãozinha */
+  transition: background-color 0.3s;  /* Transição suave na cor */
+}
+
+
+/* ========== BOTÃO QUANDO PASSA O MOUSE (SÓ SE NÃO ESTIVER DESABILITADO) ========== */
+button:hover:not(:disabled) {
+  background-color: #45a049;  /* Verde mais escuro */
+}
+
+
+/* ========== BOTÃO QUANDO ESTÁ DESABILITADO (LOADING) ========== */
+button:disabled {
+  background-color: #ccc;     /* Cinza claro */
+  cursor: not-allowed;        /* Cursor de "proibido" */
+}
+
+
+/* ========== MENSAGEM DE ERRO ========== */
+.error-message {
+  background-color: #ffebee;  /* Fundo vermelho clarinho */
+  color: #c62828;             /* Texto vermelho escuro */
+  padding: 10px;              /* Espaço interno */
+  border-radius: 4px;         /* Cantos arredondados */
+  margin-bottom: 15px;        /* Espaço abaixo */
+  font-size: 14px;            /* Tamanho da fonte */
+}
