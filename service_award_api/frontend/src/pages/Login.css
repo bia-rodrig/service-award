@@ -16,6 +16,21 @@
      #000000 = preto no final */
 }
 
+.login-container {
+  display: flex;
+  flex-direction: column;   /* 👈 FAZ O H1 FICAR EM CIMA */
+  justify-content: center;
+  align-items: center;
+
+  min-height: 100vh;
+
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #000000 100%);
+}
+
+.login-container h1{
+  color: #ffffff;
+  margin-bottom: 50px;
+}
 
 /* ========== CAIXA BRANCA DO FORMULÁRIO ========== */
 .login-box {

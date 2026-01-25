@@ -117,12 +117,14 @@ async def delete_employee(user: user_dependency, db: db_dependency, employee_id:
 	if user is None:
 		raise HTTPException(status_code=401, detail='Falha na autenticação')
 	
-	employee_model = db.query(Employees).filter(Employees.id == employee_id)\
-	.filter(Employees.manager_email == user.get('username').upper()).first()
+	employee_model = db.query(Employees).filter(Employees.id == employee_id).first()
+
+	print('employee_model: ')
+	print(employee_model)
 
 	if employee_model is None:
 		raise HTTPException(status_code=404, detail='Usuário não encontrado.')
-	
+
 	db.query(Employees).filter(Employees.id == employee_id).delete()
 	db.commit()
 
