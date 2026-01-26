@@ -32,6 +32,12 @@ function EmployeesTable() {
 
 	const [currentUser, setCurrentUser] = useState(null); //dados do usuário logado
 
+
+	// ========== NOVOS ESTADOS PARA EMAIL ==========
+	const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+	const [emailDestination, setEmailDestination] = useState('');
+	const [sendingEmail, setSendingEmail] = useState(false);
+
 	// ========== BUSCAR DADOS ==========
 	useEffect(() => {
 		const fetchData = async() => {
@@ -220,6 +226,60 @@ function EmployeesTable() {
 		}
 	};
 
+	// ========== FUNÇÕES DE EMAIL ==========
+	const handleOpenEmailModal = () => {
+		// Preenche com o email do usuário logado por padrão
+		if (currentUser) {
+			setEmailDestination(currentUser.email);
+		}
+		setIsEmailModalOpen(true);
+	};
+
+	const handleCloseEmailModal = () => {
+		setIsEmailModalOpen(false);
+		setEmailDestination('');
+	};
+
+	const handleSendEmail = async () => {
+	if (!emailDestination) {
+		alert('Por favor, informe o email de destino!');
+		return;
+	}
+
+	// Valida formato de email
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	if (!emailRegex.test(emailDestination)) {
+		alert('Por favor, informe um email válido!');
+		return;
+	}
+
+	setSendingEmail(true);
+
+	try {
+		const result = await employeeService.sendCalendarEmail(emailDestination);
+		
+		alert(
+		`${result.message}\n\nTotal de funcionários incluídos: ${result.total_employees}`
+		);
+		
+		handleCloseEmailModal();
+		
+	} catch (err) {
+		let errorMessage = 'Erro ao enviar email';
+		
+		if (typeof err.response?.data?.detail === 'string') {
+		errorMessage = err.response.data.detail;
+		} else if (err.message) {
+		errorMessage = err.message;
+		}
+		
+		alert(errorMessage);
+		
+	} finally {
+		setSendingEmail(false);
+	}
+	};
+
 	// ========== RENDERIZAÇÃO ==========
 	return (
 		<div className="employees-table-wrapper">
@@ -233,9 +293,12 @@ function EmployeesTable() {
 		{/* ========== BOTÃO ADICIONAR (NOVO) ========== */}
 		{data && (
 			<div className="table-header">
-			<button className="btn-add" onClick={handleOpenCreateModal}>
-				+ Adicionar Funcionário
-			</button>
+				<button className="btn-add" onClick={handleOpenCreateModal}>
+					+ Adicionar Funcionário
+				</button>
+				<button className="btn-send-email" onClick={handleOpenEmailModal}>
+					📧 Enviar Calendário
+				</button>
 			</div>
 		)}
 		
@@ -395,6 +458,52 @@ function EmployeesTable() {
 					</button>
 					<button type="button" className="btn-save" onClick={handleCreate}>
 					Adicionar
+					</button>
+				</div>
+				</form>
+			</div>
+			</div>
+		)}
+
+		{/* ========== MODAL DE ENVIO DE EMAIL (NOVO) ========== */}
+		{isEmailModalOpen && (
+			<div className="modal-overlay" onClick={handleCloseEmailModal}>
+			<div className="modal-content" onClick={(e) => e.stopPropagation()}>
+				<h2>📧 Enviar Calendário de Aniversários</h2>
+				
+				<p className="modal-description">
+				Será enviado um email com arquivo .ics contendo todos os aniversários 
+				de empresa dos seus subordinados.
+				</p>
+
+				<form>
+				<div className="form-group">
+					<label>Email de Destino: *</label>
+					<input
+					type="email"
+					value={emailDestination}
+					onChange={(e) => setEmailDestination(e.target.value)}
+					placeholder="seu.email@empresa.com"
+					/>
+				</div>
+
+				<div className="modal-buttons">
+					<button 
+					type="button" 
+					className="btn-cancel" 
+					onClick={handleCloseEmailModal}
+					disabled={sendingEmail}
+					>
+					Cancelar
+					</button>
+					
+					<button 
+					type="button" 
+					className="btn-save" 
+					onClick={handleSendEmail}
+					disabled={sendingEmail}
+					>
+					{sendingEmail ? 'Enviando...' : '📧 Enviar'}
 					</button>
 				</div>
 				</form>

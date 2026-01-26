@@ -274,3 +274,39 @@ color: #1976D2;
 .info-box strong {
 color: #0d47a1;
 }
+
+/* ========== BOTÃO ENVIAR EMAIL ========== */
+.btn-send-email {
+  background-color: #2196F3;  /* Azul */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
+  margin-left: 10px;
+}
+
+.btn-send-email:hover {
+  background-color: #1976D2;  /* Azul mais escuro */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+}
+
+/* ========== DESCRIÇÃO DO MODAL ========== */
+.modal-content h2{
+  color: #7e7c7c;
+}
+.modal-description {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196F3;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1565C0;
+  line-height: 1.5;
+}

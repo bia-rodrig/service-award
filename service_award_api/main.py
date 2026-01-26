@@ -7,7 +7,7 @@ import os
 import models
 from database import engine
 
-from routers import auth, employees, admin
+from routers import auth, employees, admin, email
 
 app = FastAPI()
 
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(employees.router)
 app.include_router(admin.router)
+app.include_router(email.router)
 
 # ========== SERVIR FRONTEND REACT (PRODUÇÃO) ==========
 build_path = "frontend/build"

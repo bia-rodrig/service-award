@@ -41,5 +41,18 @@ export const employeeService ={
 	updateEmployee: async (employeeId, employeeData) => {
 		const response = await api.put(`/employees/${employeeId}`, employeeData);
 		return response.data;
-	}
+	},
+
+	// ========== ENVIAR EMAIL COM CALENDÁRIO (NOVA FUNÇÃO) ==========
+	sendCalendarEmail: async (destinatario) => {
+		// Chama POST /email/send-calendar
+		const response = await api.post('/email/send-calendar', {
+			destinatario: destinatario
+		}, {
+			headers: {
+			'Content-Type': 'application/json'
+			}
+		});
+		return response.data;
+	},
 }
