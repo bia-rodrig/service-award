@@ -150,6 +150,7 @@ async def login_for_access_token(response: Response, form_data: Annotated[OAuth2
 	
 	token = create_access_token(user.email, user.id, user.role, user.is_active, timedelta(days=1))
 
+	#salva o token no cookie
 	response.set_cookie(
         key="access_token",           # Nome do cookie
         value=token,                   # O token JWT
@@ -159,7 +160,7 @@ async def login_for_access_token(response: Response, form_data: Annotated[OAuth2
         max_age=86400                  # 1 dia (em segundos)
     )
 
-	return {'token_type': 'bearer', 'is_active': user.is_active} # retorna sem o token, pois já foi setado no cookie
+	return {'token_type': 'bearer', 'is_active': user.is_active, 'role': user.role} # retorna a role
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 async def change_password(db: db_dependency, change_request: ChangePasswordRequest):
@@ -191,3 +192,24 @@ async def verify_token(user: user_dependency):
         'authenticated': True,
         'user': user
     }
+
+# Endpoint para buscar dados completos do usuário logado
+@router.get("/me", status_code=status.HTTP_200_OK)
+async def get_logged_user_data(user: user_dependency, db: db_dependency):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	# Busca os dados completos do usuário no banco
+	user_data = db.query(User).filter(User.email == user.get('username')).first()
+	
+	if user_data is None:
+		raise HTTPException(status_code=404, detail='Usuário não encontrado')
+	
+	return {
+		'id': user_data.id,
+		'email': user_data.email,
+		'name': user_data.name,
+		'surname': user_data.surname,
+		'role': user_data.role,
+		'is_active': user_data.is_active
+	}

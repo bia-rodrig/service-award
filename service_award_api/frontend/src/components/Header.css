@@ -1,0 +1,50 @@
+/* ========== HEADER ========== */
+
+
+/* Container do conteúdo (centraliza e limita largura) */
+.header-content {
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 20px;
+display: flex;
+justify-content: space-between;  /* Logo à esquerda, botão à direita */
+align-items: center;
+}
+
+/* ========== LOGO À ESQUERDA ========== */
+.header-logo {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.header-logo img {
+height: 80px;  /* Redimensiona o logo */
+width: auto;
+}
+
+.header-logo span {
+color: white;
+font-size: 20px;
+font-weight: 600;
+}
+
+/* ========== BOTÃO LOGOUT À DIREITA ========== */
+.btn-logout {
+background-color: rgba(255, 255, 255, 0.2);  /* Branco semi-transparente */
+color: white;
+border: 1px solid rgba(255, 255, 255, 0.3);
+padding: 8px 20px;
+border-radius: 4px;
+font-size: 14px;
+font-weight: 500;
+cursor: pointer;
+transition: all 0.3s;
+width: 150px;
+}
+
+.btn-logout:hover {
+background-color: rgba(255, 255, 255, 0.3);  /* Mais opaco ao passar o mouse */
+border-color: rgba(255, 255, 255, 0.5);
+transform: translateY(-2px);  /* Sobe um pouco */
+}

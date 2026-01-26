@@ -2,13 +2,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Importa a página de Login que criamos
-import Login from './pages/Login';
 
-// Importa os estilos globais
-import './App.css';
+import Login from './pages/Login';
 import Employees from './pages/Employees';
+import Dashboard from './pages/Dashboard';
+import ChangePassword from './pages/ChangePassword';
 import ProtectedRoute from './components/ProtectedRoute';
+
+import './App.css';
 
 function App() {
   return (
@@ -20,12 +21,23 @@ function App() {
           {/* Rota publica, qualquer pessoa acessa */}
           <Route path="/" element={<Login />} />
 
+          {/* Rota pública - Trocar Senha (NOVA ROTA) */}
+          <Route path="/change-password" element={<ChangePassword />} />
+
           {/* Rota protegida - só quem está logado */}
           <Route path="/employees" element={
-            <ProtectedRoute>
-            <Employees />
-            </ProtectedRoute>
-          } />
+              <ProtectedRoute>
+              <Employees />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/dashboard" element={
+              <ProtectedRoute>
+              <Dashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

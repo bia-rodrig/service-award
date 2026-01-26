@@ -58,6 +58,31 @@ class EmployeesUpdateRequest(BaseModel):
 	def normalize_name(cls, v):
 		return v.upper() if v and isinstance(v, str) else v
 
+# Schema para criar employee com manager customizado (ADMIN/RH)
+class EmployeesRequestWithManager(BaseModel):
+	employee_id: int = Field(gt=0, description='ID deve ser maior que 0')
+	employee_name: str
+	employee_email: EmailStr
+	hire_date: date
+	manager_name: str  # ← ADMIN/RH informa
+	manager_email: EmailStr  # ← ADMIN/RH informa
+
+	@field_validator('employee_email', mode='before')
+	def normalize_employee_email(cls, v):
+		return v.upper() if isinstance(v, str) else v
+	
+	@field_validator('employee_name', mode='before')
+	def normalize_employee_name(cls, v):
+		return v.upper() if isinstance(v, str) else v
+	
+	@field_validator('manager_email', mode='before')
+	def normalize_manager_email(cls, v):
+		return v.upper() if isinstance(v, str) else v
+	
+	@field_validator('manager_name', mode='before')
+	def normalize_manager_name(cls, v):
+		return v.upper() if isinstance(v, str) else v
+
 # === ENDPOINTS ===
 
 # retorna todos os funcionários do usuário logado
@@ -71,7 +96,22 @@ async def get_hierarchy_tree(user: user_dependency, db: db_dependency):
 	
 	return tree
 
-# cria um employee
+# retorna todos os funcionarios - usuarios ADMIN ou RH apenas
+@router.get('/all', status_code=status.HTTP_200_OK)
+async def get_all_employees(user: user_dependency, db: db_dependency):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	# verifica se o usuário é admin ou rh
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Acesso negado. Apenas usuários ADMIN ou RH podem acessar esta rota.')
+	
+	# busca todos os funcionários
+	all_employees = db.query(Employees).all()
+
+	return all_employees
+
+# cria um employee para o usuário logado
 @router.post('/employee', status_code=status.HTTP_201_CREATED)
 async def create_employee(user: user_dependency, db: db_dependency, employee_request: EmployeesRequest):
 	if user is None:
@@ -108,8 +148,52 @@ async def create_employee(user: user_dependency, db: db_dependency, employee_req
 	
 	return employee_model
 
+# cria um employee com manager customizado (ADMIN/RH)
+@router.post('/employee-with-manager', status_code=status.HTTP_201_CREATED)
+async def create_employee_with_manager(
+	user: user_dependency, 
+	db: db_dependency, 
+	employee_request: EmployeesRequestWithManager
+):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	# Verifica se o usuário é ADMIN ou RH
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(
+			status_code=403, 
+			detail='Apenas usuários ADMIN ou RH podem criar employees com gestor customizado'
+		)
+	
+	# Verifica se o employee_id já existe
+	existing_id = db.query(Employees).filter(
+		Employees.employee_id == employee_request.employee_id
+	).first()
+	if existing_id is not None:
+		raise HTTPException(status_code=400, detail='ID de funcionário já cadastrado no sistema')
+	
+	# Verifica se o employee_email já existe
+	existing_email = db.query(Employees).filter(
+		Employees.employee_email == employee_request.employee_email.upper()
+	).first()
+	if existing_email is not None:
+		raise HTTPException(status_code=400, detail='E-mail já cadastrado no sistema')
 
-
+	# Cadastra o novo employee com gestor customizado
+	employee_model = Employees(
+		employee_id=employee_request.employee_id,
+		employee_name=employee_request.employee_name.upper(),
+		employee_email=employee_request.employee_email.upper(),
+		hire_date=employee_request.hire_date,
+		manager_email=employee_request.manager_email.upper(),  # ← CUSTOMIZADO
+		manager_name=employee_request.manager_name.upper()     # ← CUSTOMIZADO
+	)
+		
+	db.add(employee_model)
+	db.commit()
+	db.refresh(employee_model)
+	
+	return employee_model
 
 # apaga um funcionário
 @router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -142,8 +226,6 @@ async def update_employee(
 	
 	employee_model = db.query(Employees).filter(
 		Employees.id == employee_id
-	).filter(
-		Employees.manager_email == user.get('username').upper()  # ← ADICIONA .upper()
 	).first()
 
 	if employee_model is None:

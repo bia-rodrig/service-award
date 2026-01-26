@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File
 from starlette import status
@@ -29,6 +29,18 @@ class UserResponse(BaseModel):
 	class Config:
 		from_attributes = True
 
+class UserUpdateRequest(BaseModel):
+	role: str
+	
+	@field_validator('role')
+	def validate_role(cls, v):
+		allowed_roles = ['ADMIN', 'RH', 'USER']
+		if v.upper() not in allowed_roles:
+			raise ValueError(f'Role deve ser um dos valores: {", ".join(allowed_roles)}')
+		return v.upper()
+
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -48,6 +60,32 @@ async def read_all_users(user: user_dependency, db: db_dependency):
 		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem listar todos os usuários.')
 	
 	return db.query(User).all()
+
+@router.put('/{user_id}', status_code=status.HTTP_200_OK)
+async def update_user(
+	user: user_dependency, 
+	db: db_dependency, 
+	user_update: UserUpdateRequest,
+	user_id: int = Path(gt=0)
+):
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	if user.get('role') not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem atualizar usuários.')
+	
+	# Busca o usuário
+	user_model = db.query(User).filter(User.id == user_id).first()
+	if user_model is None:
+		raise HTTPException(status_code=404, detail=f'Usuário de id "{user_id}" não encontrado.')
+	
+	# Atualiza a role
+	user_model.role = user_update.role
+	
+	db.commit()
+	db.refresh(user_model)
+	
+	return {'message': f'Permissão atualizada para {user_update.role}', 'user': user_model}
 
 @router.put('/reset_password/{user_id}', status_code=status.HTTP_200_OK)
 async def reset_password(user: user_dependency, db: db_dependency, user_id: int = Path(gt=0)):

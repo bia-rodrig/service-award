@@ -29,37 +29,49 @@ function Login(){
 
 	// função que executa quando o usuário clica em Entrar
 	const handleSubmit = async (e) => {
-		//previne o comportamento padrão do formulário (recarregar a página)\
 		e.preventDefault();
-
-		//limpa qualquer erro anterior
 		setError('')
-
-		//ativa o loading (botão fica "Entrando..." e desabilitado)
 		setLoading(true);
 
 		try{
 			// Chama a API de login (authService.login -> que está chamando o backend)
 			const data = await authService.login(email, password);
-			// data = { access_token: "xyz", token_type: "bearer", is_active: true/false }
+			// data = { access_token: "xyz", token_type: "bearer", is_active: true/false, role: "ADMIN" }
 
 			//verifica se o usuário precisa trocar de senha
 			if (!data.is_active){
-				//se for falso, redireciona para trocar de senha, passando o e-mai junto pra preencher automaticamente na pagina
 				navigate('/change-password', {state: { email } });
-				return; // para aqui, não executa o resto
+				return;
 			}
 
-			//redireciona para o employees
-			navigate('/employees');
+			//redireciona baseado na role
+			if (data.role === 'ADMIN' || data.role === 'RH'){
+				navigate('/dashboard');
+			} else {
+				navigate('/employees')
+			}
 		} catch (err){
-			// Se deu erro (email/senha errados, servidor fora, etc)
-	  		// Pega a mensagem de erro do backend ou usa uma mensagem padrão
-			setError(err.response?.data?.detail || 'Erro ao fazer login');
+			console.log('ERRO LOGIN:', err.response?.data);
+			
+			let errorMessage = 'Erro ao fazer login';
+			
+			// Se detail é array (validação Pydantic)
+			if (Array.isArray(err.response?.data?.detail)) {
+				const errors = err.response.data.detail.map(e => e.msg).join(', ');
+				errorMessage = errors;
+			} 
+			// Se detail é string
+			else if (typeof err.response?.data?.detail === 'string') {
+				errorMessage = err.response.data.detail;
+			}
+			// Se tem message
+			else if (err.message) {
+				errorMessage = err.message;
+			}
+			
+			setError(errorMessage);
 		} finally {
-			// Sempre executa (deu erro ou não)
-			// Desativa o loading
-			setLoading(false);
+			setLoading(false);  // ← TEM QUE TER ISSO AQUI!
 		}
 	};
 

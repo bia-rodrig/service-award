@@ -1,0 +1,91 @@
+/* ========== CONTAINER PRINCIPAL ========== */
+.dashboard-container {
+min-height: 100vh;
+/* DEGRADÊ AZUL PARA PRETO (igual às outras páginas) */
+background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #000000 100%);
+}
+
+/* ========== CONTEÚDO (SIDEBAR + MAIN) ========== */
+.dashboard-content {
+display: flex;
+min-height: calc(100vh - 71px);  /* Altura total - altura do header */
+}
+
+/* ========== SIDEBAR ESQUERDA ========== */
+.dashboard-sidebar {
+width: 250px;
+background-color: rgba(255, 255, 255, 0.1);  /* Branco semi-transparente */
+backdrop-filter: blur(10px);
+border-right: 1px solid rgba(255, 255, 255, 0.2);
+padding: 20px 0;
+}
+
+.dashboard-sidebar nav {
+display: flex;
+flex-direction: column;
+gap: 5px;
+}
+
+/* Botões da sidebar */
+.dashboard-sidebar button {
+background: none;
+border: none;
+color: white;
+padding: 15px 20px;
+text-align: left;
+font-size: 15px;
+cursor: pointer;
+transition: all 0.3s;
+border-left: 3px solid transparent;
+}
+
+.dashboard-sidebar button:hover {
+background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Botão ativo */
+.dashboard-sidebar button.active {
+background-color: rgba(255, 255, 255, 0.2);
+border-left-color: #4CAF50;  /* Borda verde à esquerda */
+font-weight: 600;
+}
+
+/* ========== ÁREA PRINCIPAL (DIREITA) ========== */
+.dashboard-main {
+flex: 1;  /* Ocupa todo o espaço restante */
+padding: 40px;
+overflow-y: auto;  /* Scroll se necessário */
+}
+
+.dashboard-main h2 {
+color: white;
+margin-bottom: 30px;
+font-size: 28px;
+}
+
+.dashboard-main p {
+color: white;
+font-size: 16px;
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 768px) {
+.dashboard-content {
+	flex-direction: column;
+}
+
+.dashboard-sidebar {
+	width: 100%;
+	border-right: none;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dashboard-sidebar nav {
+	flex-direction: row;
+	overflow-x: auto;
+}
+
+.dashboard-sidebar button {
+	white-space: nowrap;
+}
+}
