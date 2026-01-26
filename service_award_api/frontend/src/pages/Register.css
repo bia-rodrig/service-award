@@ -1,0 +1,155 @@
+/* ========== CONTAINER PRINCIPAL (TELA TODA) ========== */
+.register-container {
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+
+/* DEGRADÊ AZUL PARA PRETO (padrão do sistema) */
+background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #000000 100%);
+
+padding: 20px;
+}
+
+/* ========== CAIXA BRANCA CENTRAL ========== */
+.register-box {
+background-color: white;
+padding: 40px;
+border-radius: 8px;
+box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+width: 100%;
+max-width: 500px;
+}
+
+/* ========== LOGO ========== */
+.register-box .logo {
+display: block;
+margin: 0 auto 20px;
+height: 60px;
+width: auto;
+}
+
+/* ========== TÍTULO ========== */
+.register-box h1 {
+text-align: center;
+color: #333;
+margin-bottom: 10px;
+font-size: 28px;
+}
+
+/* ========== SUBTÍTULO ========== */
+.register-box .subtitle {
+text-align: center;
+color: #666;
+margin-bottom: 30px;
+font-size: 14px;
+}
+
+/* ========== FORMULÁRIO ========== */
+.register-box form {
+display: flex;
+flex-direction: column;
+gap: 18px;
+}
+
+/* ========== GRUPOS DE CAMPOS ========== */
+.register-box .form-group {
+display: flex;
+flex-direction: column;
+}
+
+.register-box .form-group label {
+margin-bottom: 5px;
+color: #555;
+font-weight: 500;
+font-size: 14px;
+}
+
+.register-box .form-group input,
+.register-box .form-group select {
+padding: 12px;
+border: 1px solid #ddd;
+border-radius: 4px;
+font-size: 14px;
+transition: border-color 0.3s;
+}
+
+.register-box .form-group input:focus,
+.register-box .form-group select:focus {
+outline: none;
+border-color: #4CAF50;
+}
+
+.register-box .form-group select {
+cursor: pointer;
+background-color: white;
+}
+
+/* ========== MENSAGEM DE ERRO ========== */
+.register-box .error-message {
+background-color: #ffebee;
+color: #c62828;
+padding: 12px;
+border-radius: 4px;
+text-align: center;
+font-size: 14px;
+border: 1px solid #ef5350;
+}
+
+/* ========== BOTÃO SUBMIT ========== */
+.register-box .btn-submit {
+background-color: #4CAF50;
+color: white;
+padding: 14px;
+border: none;
+border-radius: 4px;
+font-size: 16px;
+font-weight: 600;
+cursor: pointer;
+transition: background-color 0.3s;
+margin-top: 10px;
+}
+
+.register-box .btn-submit:hover:not(:disabled) {
+background-color: #45a049;
+}
+
+.register-box .btn-submit:disabled {
+background-color: #9e9e9e;
+cursor: not-allowed;
+}
+
+/* ========== BOTÃO VOLTAR ========== */
+.register-box .btn-back {
+	background: none;
+	border: none;
+	color: #2196F3;
+	font-size: 14px;
+	cursor: pointer;
+	margin-top: 15px;
+	padding: 10px 16px;
+	width: 100%;
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+.register-box .btn-back:hover {
+	font-size: 15px;  /* Texto um pouco maior */
+	background-color: #c9c9c9;  /* Cinza claro */
+	color: #1976D2;  /* Azul mais escuro */
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 500px) {
+.register-box {
+padding: 30px 20px;
+}
+
+.register-box h1 {
+font-size: 24px;
+}
+
+.register-box form {
+gap: 15px;
+}
+}

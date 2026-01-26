@@ -34,5 +34,15 @@ export const authService = {
 	getMe: async() => {
 		const response = await api.get('/auth/me');
 		return response.data
+	},
+
+	//criar usuário
+	createUser: async (userData) => {
+		const response = await api.post('/auth/', userData,{
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		return response.data;
 	}
 }

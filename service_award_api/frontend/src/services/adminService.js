@@ -30,4 +30,26 @@ export const adminService = {
 		return response.data;
 	},
 
+	// ========== LIMPAR BANCO DE DADOS (NOVA FUNÇÃO) ==========
+	clearAllEmployees: async () => {
+		// Chama DELETE /admin/clear_all
+		const response = await api.delete('/admin/clear_all');
+		return response.data;
+	},
+
+	// ========== UPLOAD DE EXCEL (NOVA FUNÇÃO) ==========
+	uploadExcel: async (file) => {
+		// Cria FormData para enviar o arquivo
+		const formData = new FormData();
+		formData.append('file', file);
+
+		// Chama POST /admin/upload-excel
+		const response = await api.post('/admin/upload-excel', formData, {
+			headers: {
+			'Content-Type': 'multipart/form-data'
+			}
+		});
+		return response.data;
+	},
+
 };

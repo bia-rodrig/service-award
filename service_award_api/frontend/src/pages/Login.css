@@ -120,3 +120,26 @@ button:disabled {
   margin-bottom: 15px;        /* Espaço abaixo */
   font-size: 14px;            /* Tamanho da fonte */
 }
+
+/* ========== LINK PARA CRIAR CONTA ========== */
+.register-link {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.register-link button {
+  background: none;
+  border: none;
+  color: #2196F3;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.register-link button:hover {
+  font-size: 15px;  /* Texto um pouco maior */
+  background-color: #c9c9c9;  /* Cinza claro */
+  color: #1976D2;  /* Azul mais escuro */
+}

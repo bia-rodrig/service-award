@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 import './Header.css';
 
 function Header() {
 	const navigate = useNavigate();
+	const [currentUser, setCurrentUser] = useState(null);
+
+	// Busca dados do usuário logado
+	useEffect(() => {
+		const fetchCurrentUser = async () => {
+		try {
+			const userData = await authService.getMe();
+			setCurrentUser(userData);
+		} catch (err) {
+			console.error('Erro ao buscar dados do usuário:', err);
+		}
+		};
+		fetchCurrentUser();
+	}, []);
 
 	const handleLogout = () => {
-		// Confirma se quer sair
 		const confirmLogout = window.confirm('Tem certeza que deseja sair?');
 		
 		if (!confirmLogout) {
 		return;
 		}
 		
-		// Redireciona para login (o cookie expira automaticamente)
 		navigate('/');
 	};
 
@@ -26,10 +39,18 @@ function Header() {
 			<span>Service Award</span>
 			</div>
 
-			{/* Botão de logout à direita */}
+			{/* Email e botão de logout à direita */}
+			<div className="header-right">
+			{currentUser && (
+				<span className="user-email">
+				{currentUser.email}
+				</span>
+			)}
+			
 			<button className="btn-logout" onClick={handleLogout}>
-			Sair
+				Sair
 			</button>
+			</div>
 		</div>
 		</header>
 	);

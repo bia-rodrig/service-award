@@ -115,6 +115,36 @@ async def reset_password(user: user_dependency, db: db_dependency, user_id: int 
 	
 	return {'message': f'Senha resetada para padrão. Usuário deverá trocar senha no próximo login.'}
 
+@router.delete('/clear_all', status_code=status.HTTP_200_OK)
+async def clear_all_employees(user: user_dependency, db: db_dependency):
+	# apaga todos os funcionários da tabela employees
+	if user is None:
+		raise HTTPException(status_code=401, detail='Falha na autenticação')
+	
+	user_data = db.query(User).filter(User.email == user.get('username')).first()
+	if user_data is None:
+		raise HTTPException(status_code=404, detail='Usuário não encontrado')
+	
+	if user_data.role not in ['ADMIN', 'RH']:
+		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem zerar o banco de dados')
+	
+	try:
+		total_employees = db.query(Employees).count()
+		db.query(Employees).delete()
+		db.commit()
+
+		return {
+			'message': 'Todos os funcionários foram removidos com sucesso',
+			'total_deleted': total_employees
+		}
+	except Exception as e:
+		db.rollback()
+		raise HTTPException(
+			status_code=500, 
+			detail=f'Erro ao limpar a tabela: {str(e)}'
+		)
+
+
 @router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user: user_dependency, db: db_dependency, user_id: int = Path(gt=0)):
 	if user is None:
@@ -290,32 +320,5 @@ async def upload_employees_excel(
 		db.rollback()
 		raise HTTPException(status_code=500, detail=f'Erro ao processar o arquivo: {str(e)}')
 
-@router.delete('/clear_all', status_code=status.HTTP_200_OK)
-async def clear_all_employees(user: user_dependency, db: db_dependency):
-	# apaga todos os funcionários da tabela employees
-	if user is None:
-		raise HTTPException(status_code=401, detail='Falha na autenticação')
-	
-	user_data = db.query(User).filter(User.email == user.get('username')).first()
-	if user_data is None:
-		raise HTTPException(status_code=404, detail='Usuário não encontrado')
-	
-	if user_data.role not in ['ADMIN', 'RH']:
-		raise HTTPException(status_code=403, detail='Apenas usuários ADMIN ou RH podem zerar o banco de dados')
-	
-	try:
-		total_employees = db.query(Employees).count()
-		db.query(Employees).delete()
-		db.commit()
 
-		return {
-			'message': 'Todos os funcionários foram removidos com sucesso',
-			'total_deleted': total_employees
-		}
-	except Exception as e:
-		db.rollback()
-		raise HTTPException(
-			status_code=500, 
-			detail=f'Erro ao limpar a tabela: {str(e)}'
-		)
 	

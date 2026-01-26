@@ -121,6 +121,12 @@ function Login(){
 						{loading ? 'Entrando...' : 'Entrar'}
 					</button>
 				</form>
+				{/* ========== LINK PARA CRIAR CONTA (NOVO) ========== */}
+				<div className="register-link">
+					<button onClick={() => navigate('/register')}>
+						Não tem uma conta? Criar conta aqui
+					</button>
+				</div>
 			</div>
 		</div>
 	)

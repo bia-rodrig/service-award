@@ -3,6 +3,8 @@ import Header from '../components/Header';
 import EmployeesTable from '../components/EmployeesTable';
 import AllEmployeesTable from '../components/AllEmployeesTable';
 import UsersTable from '../components/UsersTable';
+import ClearDatabase from '../components/ClearDatabase';
+import UploadExcel from '../components/UploadExcel';
 import './Dashboard.css'
 
 function Dashboard(){
@@ -39,6 +41,18 @@ function Dashboard(){
 					>
 					Gerenciar Usuários
 					</button>
+					<button
+					className={activeSection === 'carregar-banco' ? 'active' : ''}
+					onClick={() => setActiveSection('carregar-banco')}
+					>
+					Carregar Banco de Dados
+					</button>
+					<button
+					className={activeSection === 'limpar-banco' ? 'active' : ''}
+					onClick={() => setActiveSection('limpar-banco')}
+					>
+					Limpar Banco de Dados
+					</button>
 				</nav>
 				</aside>
 
@@ -66,6 +80,22 @@ function Dashboard(){
 					<h2>Gerenciar Usuários</h2>
 					<UsersTable />
 					</div>
+				)}
+				
+				{/* ========== CARREGAR BANCO DE DADOS (NOVO) ========== */}
+				{activeSection === 'carregar-banco' && (
+				<div>
+					<h2>Carregar Banco de Dados</h2>
+					<UploadExcel />
+				</div>
+				)}
+
+				{/* ========== LIMPAR BANCO DE DADOS (NOVO) ========== */}
+				{activeSection === 'limpar-banco' && (
+				<div>
+					<h2>Limpar Banco de Dados</h2>
+					<ClearDatabase />
+				</div>
 				)}
 				</main>
 			</div>

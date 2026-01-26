@@ -1,5 +1,10 @@
 /* ========== HEADER ========== */
-
+.header {
+background-color: rgba(255, 255, 255, 0.1);  /* Branco semi-transparente */
+backdrop-filter: blur(10px);  /* Efeito de blur no fundo */
+padding: 15px 0;
+border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
 
 /* Container do conteúdo (centraliza e limita largura) */
 .header-content {
@@ -7,7 +12,7 @@ max-width: 1400px;
 margin: 0 auto;
 padding: 0 20px;
 display: flex;
-justify-content: space-between;  /* Logo à esquerda, botão à direita */
+justify-content: space-between;  /* Logo à esquerda, resto à direita */
 align-items: center;
 }
 
@@ -19,7 +24,7 @@ gap: 12px;
 }
 
 .header-logo img {
-height: 80px;  /* Redimensiona o logo */
+height: 40px;  /* Redimensiona o logo */
 width: auto;
 }
 
@@ -29,7 +34,25 @@ font-size: 20px;
 font-weight: 600;
 }
 
-/* ========== BOTÃO LOGOUT À DIREITA ========== */
+/* ========== LADO DIREITO (EMAIL + BOTÃO) ========== */
+.header-right {
+display: flex;
+align-items: center;
+gap: 15px;
+}
+
+/* ========== EMAIL DO USUÁRIO ========== */
+.user-email {
+color: white;
+font-size: 14px;
+font-weight: 500;
+padding: 6px 12px;
+background-color: rgba(255, 255, 255, 0.15);
+border-radius: 4px;
+border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ========== BOTÃO LOGOUT ========== */
 .btn-logout {
 background-color: rgba(255, 255, 255, 0.2);  /* Branco semi-transparente */
 color: white;
@@ -40,11 +63,29 @@ font-size: 14px;
 font-weight: 500;
 cursor: pointer;
 transition: all 0.3s;
-width: 150px;
 }
 
 .btn-logout:hover {
 background-color: rgba(255, 255, 255, 0.3);  /* Mais opaco ao passar o mouse */
 border-color: rgba(255, 255, 255, 0.5);
 transform: translateY(-2px);  /* Sobe um pouco */
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 768px) {
+.header-content {
+flex-direction: column;
+gap: 15px;
+}
+
+.header-right {
+width: 100%;
+justify-content: center;
+flex-wrap: wrap;
+}
+
+.user-email {
+font-size: 13px;
+padding: 5px 10px;
+}
 }

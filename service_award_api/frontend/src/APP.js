@@ -7,7 +7,11 @@ import Login from './pages/Login';
 import Employees from './pages/Employees';
 import Dashboard from './pages/Dashboard';
 import ChangePassword from './pages/ChangePassword';
+
+import Register from './pages/Register';
+
 import ProtectedRoute from './components/ProtectedRoute';
+
 
 import './App.css';
 
@@ -23,6 +27,9 @@ function App() {
 
           {/* Rota pública - Trocar Senha (NOVA ROTA) */}
           <Route path="/change-password" element={<ChangePassword />} />
+
+          {/* Rota pública - Cadastrar usuario */}
+          <Route path="/register" element={<Register />} />
 
           {/* Rota protegida - só quem está logado */}
           <Route path="/employees" element={
