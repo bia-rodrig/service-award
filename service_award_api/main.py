@@ -14,11 +14,27 @@ app = FastAPI()
 # cria tabelas do banco 
 models.Base.metadata.create_all(bind=engine)
 
-# CORS para desenvolvimento (quando React roda em localhost:3000)
+# CORS para desenvolvimento (quando React roda em localhost:3000) - DEV
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["http://localhost:3000"],  # Frontend
+#     allow_credentials=True,  # ← Permite cookies!
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+
+# CORS para desenvolvimento E produção
+# Em produção, o frontend está no mesmo servidor, então não precisa de CORS
+# Mas deixamos configurado para aceitar localhost (dev) e o IP do servidor (produção)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend
-    allow_credentials=True,  # ← Permite cookies!
+    allow_origins=[
+        "http://localhost:3000",  # Desenvolvimento
+        "http://10.74.114.9:8000",  # Produção (ajuste o IP se for diferente) - IP de onde vai rodar o backend
+        "http://127.0.0.1:8000",  # Local
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -47,9 +63,10 @@ if os.path.exists(build_path):
     # Rota catch-all para React Router (DEVE SER A ÚLTIMA ROTA!)
     @app.get("/{full_path:path}")
     async def serve_react(full_path: str):
-        # Se for rota da API, não serve o React
-        if full_path.startswith(("auth/", "employees/", "admin/")):
-            return {"detail": "Not Found"}
+        # Verifica se é arquivo físico (CSS, JS, imagens, etc)
+        file_path = f"{build_path}/{full_path}"
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
         
-        # Serve o index.html do React para qualquer outra rota
+        # Para qualquer outra rota (incluindo rotas do React Router), serve o index.html
         return FileResponse(f"{build_path}/index.html")

@@ -33,6 +33,10 @@ function AllEmployeesTable() {
 	});
 	const [currentUser, setCurrentUser] = useState(null);
 
+	// ========== NOVOS ESTADOS PARA BUSCA E ORDENAÇÃO ==========
+	const [searchTerm, setSearchTerm] = useState('');
+	const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
 	// ========== BUSCAR TODOS OS EMPLOYEES ==========
 	useEffect(() => {
 		const fetchData = async() => {
@@ -208,6 +212,69 @@ const handleCreate = async () => {
 	}
 };
 
+	// ========== FUNÇÕES DE BUSCA E ORDENAÇÃO ==========
+	const handleSort = (key) => {
+	let direction = 'asc';
+	if (sortConfig.key === key && sortConfig.direction === 'asc') {
+		direction = 'desc';
+	}
+	setSortConfig({ key, direction });
+	};
+
+	const getFilteredAndSortedData = () => {
+	if (!data || data.length === 0) return [];
+	
+	let employees = [...data];  // Cópia do array
+	
+	// 1. Filtra por termo de busca
+	if (searchTerm) {
+		const term = searchTerm.toLowerCase();
+		employees = employees.filter(emp => 
+		emp.employee_name?.toLowerCase().includes(term) ||
+		emp.employee_email?.toLowerCase().includes(term) ||
+		emp.employee_id?.toString().includes(term) ||
+		emp.manager_name?.toLowerCase().includes(term)
+		);
+	}
+	
+	// 2. Ordena
+	if (sortConfig.key) {
+		employees.sort((a, b) => {
+		let aValue = a[sortConfig.key];
+		let bValue = b[sortConfig.key];
+		
+		// Tratamento especial para datas
+		if (sortConfig.key === 'hire_date') {
+			aValue = new Date(aValue);
+			bValue = new Date(bValue);
+		}
+		
+		// Tratamento especial para números
+		if (sortConfig.key === 'employee_id' || sortConfig.key === 'id') {
+			aValue = Number(aValue);
+			bValue = Number(bValue);
+		}
+		
+		if (aValue < bValue) {
+			return sortConfig.direction === 'asc' ? -1 : 1;
+		}
+		if (aValue > bValue) {
+			return sortConfig.direction === 'asc' ? 1 : -1;
+		}
+		return 0;
+		});
+	}
+	
+	return employees;
+	};
+
+	const getSortIcon = (key) => {
+	if (sortConfig.key !== key) {
+		return ' ↕️';
+	}
+	return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+	};
+
 	// ========== RENDERIZAÇÃO ==========
 	return (
 		<div className="employees-table-wrapper">
@@ -226,26 +293,56 @@ const handleCreate = async () => {
 			</button>
 			</div>
 		)}
+
+		{/* Campo de busca */}
+		{data.length > 0 && (
+		<div className="search-container">
+			<input
+			type="text"
+			className="search-input"
+			placeholder="🔍 Buscar por nome, email, ID..."
+			value={searchTerm}
+			onChange={(e) => setSearchTerm(e.target.value)}
+			/>
+			{searchTerm && (
+			<button className="btn-clear-search" onClick={() => setSearchTerm('')}>
+				✕
+			</button>
+			)}
+		</div>
+		)}
 		
 		{data.length > 0 && (
 			<div className="table-container">
 			<table className="employees-table">
 				<thead>
-				<tr>
-					<th>ID</th>
-					<th>ID Empregado</th>
-					<th>Nome</th>
-					<th>Email</th>
-					<th>Aniversário de Empresa</th>
-					<th>Anos de Empresa</th>
-					<th>Dias até Aniversário</th>
-					<th>Gestor</th>
-					<th>Ações</th>
-				</tr>
+					<tr>
+						<th onClick={() => handleSort('id')} style={{cursor: 'pointer'}}>
+						ID{getSortIcon('id')}
+						</th>
+						<th onClick={() => handleSort('employee_id')} style={{cursor: 'pointer'}}>
+						ID Empregado{getSortIcon('employee_id')}
+						</th>
+						<th onClick={() => handleSort('employee_name')} style={{cursor: 'pointer'}}>
+						Nome{getSortIcon('employee_name')}
+						</th>
+						<th onClick={() => handleSort('employee_email')} style={{cursor: 'pointer'}}>
+						Email{getSortIcon('employee_email')}
+						</th>
+						<th onClick={() => handleSort('hire_date')} style={{cursor: 'pointer'}}>
+						Aniversário de Empresa{getSortIcon('hire_date')}
+						</th>
+						<th>Anos de Empresa</th>
+						<th>Dias até Aniversário</th>
+						<th onClick={() => handleSort('manager_name')} style={{cursor: 'pointer'}}>
+						Gestor{getSortIcon('manager_name')}
+						</th>
+						<th>Ações</th>
+					</tr>
 				</thead>
 				<tbody>
 				{/* Não precisa de flattenHierarchy - data já é array simples */}
-				{data.map((employee) => (
+				{getFilteredAndSortedData().map((employee) => (
 					<tr key={employee.id}>
 					<td>{employee.id}</td>
 					<td>{employee.employee_id}</td>
