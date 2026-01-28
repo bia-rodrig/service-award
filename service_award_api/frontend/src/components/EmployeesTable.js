@@ -246,43 +246,46 @@ function EmployeesTable() {
 	};
 
 	const handleSendEmail = async () => {
-	if (!emailDestination) {
-		alert('Por favor, informe o email de destino!');
-		return;
-	}
-
-	// Valida formato de email
-	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-	if (!emailRegex.test(emailDestination)) {
-		alert('Por favor, informe um email válido!');
-		return;
-	}
-
-	setSendingEmail(true);
-
-	try {
-		const result = await employeeService.sendCalendarEmail(emailDestination);
-		
-		alert(
-		`${result.message}\n\nTotal de funcionários incluídos: ${result.total_employees}`
-		);
-		
-		handleCloseEmailModal();
-		
-	} catch (err) {
-		let errorMessage = 'Erro ao enviar email';
-		
-		if (typeof err.response?.data?.detail === 'string') {
-		errorMessage = err.response.data.detail;
-		} else if (err.message) {
-		errorMessage = err.message;
+		if (!emailDestination) {
+			alert('Por favor, informe o email de destino!');
+			return;
 		}
-		
-		alert(errorMessage);
-		
-	} finally {
-		setSendingEmail(false);
-	}
+
+		// Valida formato de email
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(emailDestination)) {
+			alert('Por favor, informe um email válido!');
+			return;
+		}
+
+		setSendingEmail(true);
+
+		try {
+			const result = await employeeService.sendCalendarEmail(emailDestination);
+			
+			alert(
+			`${result.message}\n\nTotal de funcionários incluídos: ${result.total_employees}`
+			);
+			
+			handleCloseEmailModal();
+			
+		} catch (err) {
+			let errorMessage = 'Erro ao enviar email';
+			
+			if (typeof err.response?.data?.detail === 'string') {
+			errorMessage = err.response.data.detail;
+			} else if (err.message) {
+			errorMessage = err.message;
+			} else {
+			errorMessage = 'Erro desconhecido ao enviar email. Por favor, entre em contato com bianca.rodrigues@disney.com';
+			}
+			
+			// Mostra alert com quebra de linha para melhor leitura
+			alert(`❌ ${errorMessage}`);
+			
+		} finally {
+			setSendingEmail(false);
+		}
 	};
 
 	
@@ -569,12 +572,11 @@ function EmployeesTable() {
 		{/* ========== MODAL DE ENVIO DE EMAIL (NOVO) ========== */}
 		{isEmailModalOpen && (
 			<div className="modal-overlay" onClick={handleCloseEmailModal}>
-			<div className="modal-content" onClick={(e) => e.stopPropagation()}>
+			<div className="modal-content email-modal" onClick={(e) => e.stopPropagation()}>
 				<h2>📧 Enviar Calendário de Aniversários</h2>
 				
 				<p className="modal-description">
-				Será enviado um email com arquivo .ics contendo todos os aniversários 
-				de empresa dos seus subordinados.
+				Será enviado um e-mail com um arquivo para adicionar ao Outlook, contendo todos os aniversários de empresa dos seus funcionários.
 				</p>
 
 				<form>

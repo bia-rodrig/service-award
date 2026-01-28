@@ -142,15 +142,15 @@ async def send_calendar_email(
 	except socket.timeout:
 		raise HTTPException(
 			status_code=504,
-			detail='Timeout ao conectar no Mail-E. Verifique se o servidor está rodando.'
+			detail='Não foi possível conectar ao servidor de email (timeout). Por favor, entre em contato com bianca.rodrigues@disney.com para reportar o problema.'
 		)
 	except socket.error as e:
 		raise HTTPException(
 			status_code=503,
-			detail=f'Erro ao conectar no Mail-E: {str(e)}'
+			detail=f'Erro ao conectar ao servidor de email: {str(e)}. Por favor, entre em contato com bianca.rodrigues@disney.com para reportar o problema.'
 		)
 	except Exception as e:
 		raise HTTPException(
 			status_code=500,
-			detail=f'Erro ao enviar email: {str(e)}'
+			detail=f'Erro ao enviar email: {str(e)}. Por favor, entre em contato com bianca.rodrigues@disney.com para reportar o problema.'
 		)

@@ -36,7 +36,7 @@ function Header() {
 			{/* Logo à esquerda */}
 			<div className="header-logo">
 			<img src="/logo512.png" alt="Logo" />
-			<span>Service Award</span>
+			<span>Service Award Calendar</span>
 			</div>
 
 			{/* Email e botão de logout à direita */}

@@ -297,9 +297,6 @@ color: #0d47a1;
 }
 
 /* ========== DESCRIÇÃO DO MODAL ========== */
-.modal-content h2{
-  color: #7e7c7c;
-}
 .modal-description {
   background-color: #e3f2fd;
   border-left: 4px solid #2196F3;
@@ -319,6 +316,15 @@ color: #0d47a1;
   max-width: 500px;
   display: flex;
   justify-content: center;
+}
+
+/* ========== ESTILO ESPECÍFICO PARA MODAL DE EMAIL ========== */
+.email-modal h2 {
+  color: #2c2c2c !important;  /* Título bem visível */
+}
+
+.email-modal .modal-description {
+  color: #0d47a1 !important;  /* Texto bem escuro */
 }
 
 .search-input {
