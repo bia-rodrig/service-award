@@ -5,6 +5,8 @@ import { MdEdit } from 'react-icons/md';
 import { FaTrash } from 'react-icons/fa';
 import './EmployeesTable.css';  // Reutiliza o mesmo CSS
 
+import AlertModal from './AlertModal';
+
 function AllEmployeesTable() {
 	// ========== ESTADOS ==========
 	const [data, setData] = useState([]);  // Array vazio (lista simples)
@@ -32,6 +34,15 @@ function AllEmployeesTable() {
 		manager_email: ''
 	});
 	const [currentUser, setCurrentUser] = useState(null);
+
+
+	const [alert, setAlert] = useState({
+		isOpen: false,
+		type: 'error',
+		title: '',
+		message: '',
+		onConfirm: null
+	});
 
 	// ========== NOVOS ESTADOS PARA BUSCA E ORDENAÇÃO ==========
 	const [searchTerm, setSearchTerm] = useState('');
@@ -97,22 +108,42 @@ function AllEmployeesTable() {
 
 	// ========== FUNÇÕES DE AÇÃO ==========
 	const handleDelete = async (employee) => {
-		const confirmDelete = window.confirm(
-		`Tem certeza que deseja remover ${employee.employee_name}?\n\nEsta ação não pode ser desfeita.`
-		);
-		if (!confirmDelete) {
-		return;
-		}
-		try{
-		await employeeService.deleteEmployee(employee.id);
-		alert(`${employee.employee_name} foi removido com sucesso!`);
-		// Recarrega TODOS os employees
-		const result = await employeeService.getAllEmployees();
-		setData(result);
-		} catch (err){
-		alert(err.response?.data?.detail || 'Erro ao remover employee');
-		}
+		// Abre modal de confirmação
+		setAlert({
+			isOpen: true,
+			type: 'question',
+			title: 'Confirmar Exclusão',
+			message: `Tem certeza que deseja remover ${employee.employee_name}?\n\nEsta ação não pode ser desfeita.`,
+			onConfirm: async () => {
+				setAlert({ ...alert, isOpen: false });
+				
+				try {
+					await employeeService.deleteEmployee(employee.id);
+					
+					setAlert({
+						isOpen: true,
+						type: 'success',
+						title: 'Sucesso!',
+						message: `${employee.employee_name} foi removido com sucesso!`,
+						onConfirm: null
+					});
+					
+					const result = await employeeService.getAllEmployees();
+					setData(result);
+					
+				} catch (err) {
+					setAlert({
+						isOpen: true,
+						type: 'error',
+						title: 'Erro ao Remover',
+						message: err.response?.data?.detail || 'Erro ao remover funcionário',
+						onConfirm: null
+					});
+				}
+			}
+		});
 	};
+		
 
 	const handleEdit = (employee) => {
 		setEditingEmployee(employee);
@@ -138,19 +169,33 @@ function AllEmployeesTable() {
 
 	const handleSave = async () => {
 		try {
-		await employeeService.updateEmployee(editingEmployee.id, {
-			employee_id: parseInt(formData.employee_id),
-			employee_name: formData.employee_name,
-			employee_email: formData.employee_email,
-			hire_date: formData.hire_date
-		});
-		alert('Employee atualizado com sucesso!');
-		// Recarrega TODOS os employees
-		const result = await employeeService.getAllEmployees();
-		setData(result);
-		handleCloseModal();
+			await employeeService.updateEmployee(editingEmployee.id, {
+				employee_id: parseInt(formData.employee_id),
+				employee_name: formData.employee_name,
+				employee_email: formData.employee_email,
+				hire_date: formData.hire_date
+			});
+			
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: 'Sucesso!',
+				message: 'Funcionário atualizado com sucesso!',
+				onConfirm: null
+			});
+			
+			const result = await employeeService.getAllEmployees();
+			setData(result);
+			handleCloseModal();
+			
 		} catch (err) {
-		alert(err.response?.data?.detail || 'Erro ao atualizar employee');
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Atualizar',
+				message: err.response?.data?.detail || 'Erro ao atualizar funcionário',
+				onConfirm: null
+			});
 		}
 	};
 
@@ -179,38 +224,57 @@ const handleCloseCreateModal = () => {
   });
 };
 
-const handleCreate = async () => {
-	try {
-	// Valida campos obrigatórios
-	if (!createFormData.employee_id || !createFormData.employee_name || 
-		!createFormData.employee_email || !createFormData.hire_date ||
-		!createFormData.manager_name || !createFormData.manager_email) {
-		alert('Todos os campos são obrigatórios!');
-		return;
-	}
+	const handleCreate = async () => {
+		try {
+			// Valida campos obrigatórios
+			if (!createFormData.employee_id || !createFormData.employee_name || 
+				!createFormData.employee_email || !createFormData.hire_date ||
+				!createFormData.manager_name || !createFormData.manager_email) {
+				
+				setAlert({
+					isOpen: true,
+					type: 'warning',
+					title: 'Campos Obrigatórios',
+					message: 'Por favor, preencha todos os campos!',
+					onConfirm: null
+				});
+				return;
+			}
 
-	// Cria o employee COM gestor customizado
-	await employeeService.createEmployeeWithManager({
-		employee_id: parseInt(createFormData.employee_id),
-		employee_name: createFormData.employee_name,
-		employee_email: createFormData.employee_email,
-		hire_date: createFormData.hire_date,
-		manager_name: createFormData.manager_name,   // ← NOVO
-		manager_email: createFormData.manager_email  // ← NOVO
-	});
+			// Cria o employee COM gestor customizado
+			await employeeService.createEmployeeWithManager({
+				employee_id: parseInt(createFormData.employee_id),
+				employee_name: createFormData.employee_name,
+				employee_email: createFormData.employee_email,
+				hire_date: createFormData.hire_date,
+				manager_name: createFormData.manager_name,
+				manager_email: createFormData.manager_email
+			});
 
-	alert('Funcionário criado com sucesso!');
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: 'Sucesso!',
+				message: 'Funcionário criado com sucesso!',
+				onConfirm: null
+			});
 
-	// Recarrega TODOS os employees
-	const result = await employeeService.getAllEmployees();
-	setData(result);
+			// Recarrega TODOS os employees
+			const result = await employeeService.getAllEmployees();
+			setData(result);
 
-	handleCloseCreateModal();
+			handleCloseCreateModal();
 
-	} catch (err) {
-	alert(err.response?.data?.detail || 'Erro ao criar funcionário');
-	}
-};
+		} catch (err) {
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Criar',
+				message: err.response?.data?.detail || 'Erro ao criar funcionário',
+				onConfirm: null
+			});
+		}
+	};
 
 	// ========== FUNÇÕES DE BUSCA E ORDENAÇÃO ==========
 	const handleSort = (key) => {
@@ -504,6 +568,16 @@ const handleCreate = async () => {
 				</div>
 			</div>
 			)}
+
+		{/* ========== ALERT MODAL (REUTILIZÁVEL) ========== */}
+		<AlertModal
+			isOpen={alert.isOpen}
+			type={alert.type}
+			title={alert.title}
+			message={alert.message}
+			onClose={() => setAlert({ ...alert, isOpen: false })}
+			onConfirm={alert.onConfirm}
+		/>
 		</div>
 	);
 }

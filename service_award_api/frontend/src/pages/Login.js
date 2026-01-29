@@ -6,6 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 //importa as funções de login que criamos
 
+import AlertModal from '../components/AlertModal';
+import Footer from '../components/Footer'; 
+
 import './Login.css'
 
 //componente Login
@@ -18,11 +21,16 @@ function Login(){
 	//estado da senha digitada
 	const [password, setPassword] = useState('');
 
-	//estado de erro (mensagem de erro se login falhas)
-	const [error, setError] = useState('');
-
 	//estado de loading (mostra "Entrando..." enquanto faz a requisição)
 	const [loading, setLoading] = useState(false);
+
+	const [alert, setAlert] = useState({
+		isOpen: false,
+		type: 'error',
+		title: '',
+		message: '',
+		onConfirm: null
+	});
 
 	//função para navegar entre páginas
 	const navigate = useNavigate();
@@ -30,48 +38,48 @@ function Login(){
 	// função que executa quando o usuário clica em Entrar
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setError('')
 		setLoading(true);
 
 		try{
-			// Chama a API de login (authService.login -> que está chamando o backend)
 			const data = await authService.login(email, password);
-			// data = { access_token: "xyz", token_type: "bearer", is_active: true/false, role: "ADMIN" }
-
-			//verifica se o usuário precisa trocar de senha
+			
 			if (!data.is_active){
-				navigate('/change-password', {state: { email } });
-				return;
+			navigate('/change-password', {state: { email } });
+			return;
 			}
 
-			//redireciona baseado na role
-			if (data.role === 'ADMIN' || data.role === 'RH'){
-				navigate('/dashboard');
+			if (data.role === 'ADMIN' || data.role === 'RH') {
+			navigate('/dashboard');
 			} else {
-				navigate('/employees')
+			navigate('/employees');
 			}
+			
 		} catch (err){
 			console.log('ERRO LOGIN:', err.response?.data);
 			
 			let errorMessage = 'Erro ao fazer login';
 			
-			// Se detail é array (validação Pydantic)
 			if (Array.isArray(err.response?.data?.detail)) {
-				const errors = err.response.data.detail.map(e => e.msg).join(', ');
-				errorMessage = errors;
+			const errors = err.response.data.detail.map(e => e.msg).join(', ');
+			errorMessage = errors;
 			} 
-			// Se detail é string
 			else if (typeof err.response?.data?.detail === 'string') {
-				errorMessage = err.response.data.detail;
+			errorMessage = err.response.data.detail;
 			}
-			// Se tem message
 			else if (err.message) {
-				errorMessage = err.message;
+			errorMessage = err.message;
 			}
 			
-			setError(errorMessage);
+			setAlert({
+			isOpen: true,
+			type: 'error',
+			title: 'Erro no Login',
+			message: errorMessage,
+			onConfirm: null
+			});
+			
 		} finally {
-			setLoading(false);  // ← TEM QUE TER ISSO AQUI!
+			setLoading(false);
 		}
 	};
 
@@ -112,9 +120,6 @@ function Login(){
 						/>
 					</div>
 
-					{/* ========== MENSAGEM DE ERRO (SÓ APARECE SE TIVER ERRO) ========== */}
-					{error && <div className="error-message">{error}</div>}
-
 					{/* ========== BOTÃO DE ENVIAR ========== */}
 					<button type="submit" disabled={loading}>
 						{/* Se loading = true, mostra "Entrando...", senão mostra "Entrar" */}
@@ -128,6 +133,16 @@ function Login(){
 					</button>
 				</div>
 			</div>
+			{/* ========== ALERT MODAL (REUTILIZÁVEL) ========== */}
+			<AlertModal
+				isOpen={alert.isOpen}
+				type={alert.type}
+				title={alert.title}
+				message={alert.message}
+				onClose={() => setAlert({ ...alert, isOpen: false })}
+				onConfirm={alert.onConfirm}
+			/>
+			<Footer />
 		</div>
 	)
 }

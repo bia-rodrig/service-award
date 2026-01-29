@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import AlertModal from '../components/AlertModal';
 import './ChangePassword.css';
 
 function ChangePassword() {
@@ -15,55 +16,93 @@ function ChangePassword() {
 	const [currentPassword, setCurrentPassword] = useState('');
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	const [alert, setAlert] = useState({
+		isOpen: false,
+		type: 'error',
+		title: '',
+		message: '',
+		onConfirm: null
+	});
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setError('');
 		
 		// Validações
 		if (!email || !currentPassword || !newPassword || !confirmPassword) {
-		setError('Todos os campos são obrigatórios!');
-		return;
+			setAlert({
+			isOpen: true,
+			type: 'warning',
+			title: 'Campos Obrigatórios',
+			message: 'Todos os campos são obrigatórios!',
+			onConfirm: null
+			});
+			return;
 		}
 
 		if (newPassword !== confirmPassword) {
-		setError('As senhas não coincidem!');
-		return;
+			setAlert({
+			isOpen: true,
+			type: 'warning',
+			title: 'Senhas Diferentes',
+			message: 'As senhas não coincidem!',
+			onConfirm: null
+			});
+			return;
 		}
 
 		if (newPassword.length < 6) {
-		setError('A nova senha deve ter no mínimo 6 caracteres!');
-		return;
+			setAlert({
+			isOpen: true,
+			type: 'warning',
+			title: 'Senha Muito Curta',
+			message: 'A nova senha deve ter no mínimo 6 caracteres!',
+			onConfirm: null
+			});
+			return;
 		}
 
 		setLoading(true);
 
 		try {
-		await authService.changePassword(email, currentPassword, newPassword);
-		
-		alert('Senha alterada com sucesso! Faça login com a nova senha.');
-		navigate('/');
-		
+			await authService.changePassword(email, currentPassword, newPassword);
+			
+			setAlert({
+			isOpen: true,
+			type: 'success',
+			title: 'Senha Alterada!',
+			message: 'Senha alterada com sucesso!\n\nFaça login com a nova senha.',
+			onConfirm: () => {
+				setAlert({ ...alert, isOpen: false });
+				navigate('/');
+			}
+			});
+			
 		} catch (err) {
-		let errorMessage = 'Erro ao alterar senha';
-		
-		if (Array.isArray(err.response?.data?.detail)) {
+			let errorMessage = 'Erro ao alterar senha';
+			
+			if (Array.isArray(err.response?.data?.detail)) {
 			const errors = err.response.data.detail.map(e => e.msg).join(', ');
 			errorMessage = errors;
-		} 
-		else if (typeof err.response?.data?.detail === 'string') {
+			} 
+			else if (typeof err.response?.data?.detail === 'string') {
 			errorMessage = err.response.data.detail;
-		}
-		else if (err.message) {
+			}
+			else if (err.message) {
 			errorMessage = err.message;
-		}
-		
-		setError(errorMessage);
-		
+			}
+			
+			setAlert({
+			isOpen: true,
+			type: 'error',
+			title: 'Erro ao Alterar Senha',
+			message: errorMessage,
+			onConfirm: null
+			});
+			
 		} finally {
-		setLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -121,13 +160,6 @@ function ChangePassword() {
 				/>
 			</div>
 
-			{/* Mensagem de Erro */}
-			{error && (
-				<div className="error-message">
-				{typeof error === 'string' ? error : 'Erro ao alterar senha'}
-				</div>
-			)}
-
 			{/* Botão */}
 			<button type="submit" disabled={loading} className="btn-submit">
 				{loading ? 'Alterando...' : 'Alterar Senha'}
@@ -139,6 +171,15 @@ function ChangePassword() {
 			← Voltar para o login
 			</button>
 		</div>
+
+		<AlertModal
+			isOpen={alert.isOpen}
+			type={alert.type}
+			title={alert.title}
+			message={alert.message}
+			onClose={() => setAlert({ ...alert, isOpen: false })}
+			onConfirm={alert.onConfirm}
+		/>
 		</div>
 	);
 }

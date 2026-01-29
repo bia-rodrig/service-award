@@ -5,6 +5,10 @@ import { MdEdit } from 'react-icons/md';
 import { FaTrash } from 'react-icons/fa';
 import './EmployeesTable.css';
 
+
+
+import AlertModal from './AlertModal';
+
 function EmployeesTable() {
 	// ========== ESTADOS ==========
 	const [data, setData] = useState(null);
@@ -32,13 +36,21 @@ function EmployeesTable() {
 
 	const [currentUser, setCurrentUser] = useState(null); //dados do usuário logado
 
+	// ========== ESTADO DO ALERT MODAL ==========
+	const [alert, setAlert] = useState({
+		isOpen: false,
+		type: 'error',
+		title: '',
+		message: '',
+		onConfirm: null  // Para confirmações (type='question')
+	});
 
-	// ========== NOVOS ESTADOS PARA EMAIL ==========
+	// ========== ESTADOS PARA EMAIL ==========
 	const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 	const [emailDestination, setEmailDestination] = useState('');
 	const [sendingEmail, setSendingEmail] = useState(false);
 
-	// ========== NOVOS ESTADOS PARA BUSCA E ORDENAÇÃO ==========
+	// ========== ESTADOS PARA BUSCA E ORDENAÇÃO ==========
 	const [searchTerm, setSearchTerm] = useState('');
 	const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 	
@@ -111,21 +123,46 @@ function EmployeesTable() {
 		return diffDays;
 	};
 
+	// ========== DELETAR (COM ALERTMODAL) ==========
 	const handleDelete = async (employee) => {
-		const confirmDelete = window.confirm(
-		`Tem certeza que deseja remover ${employee.employee_name}?\n\nEsta ação não pode ser desfeita.`
-		);
-		if (!confirmDelete) {
-		return;
-		}
-		try{
-		await employeeService.deleteEmployee(employee.id);
-		alert(`${employee.employee_name} foi removido com sucesso!`);
-		const result = await employeeService.getHierarchy();
-		setData(result);
-		} catch (err){
-		alert(err.response?.data?.detail || 'Erro ao remover employee');
-		}
+		// Abre modal de confirmação
+		setAlert({
+			isOpen: true,
+			type: 'question',
+			title: 'Confirmar Exclusão',
+			message: `Tem certeza que deseja remover ${employee.employee_name}?\n\nEsta ação não pode ser desfeita.`,
+			onConfirm: async () => {
+				// Fecha o modal de confirmação
+				setAlert({ ...alert, isOpen: false });
+				
+				try {
+					await employeeService.deleteEmployee(employee.id);
+					
+					// Mostra sucesso
+					setAlert({
+						isOpen: true,
+						type: 'success',
+						title: 'Sucesso!',
+						message: `${employee.employee_name} foi removido com sucesso!`,
+						onConfirm: null
+					});
+					
+					// Recarrega dados
+					const result = await employeeService.getHierarchy();
+					setData(result);
+					
+				} catch (err) {
+					// Mostra erro
+					setAlert({
+						isOpen: true,
+						type: 'error',
+						title: 'Erro ao Remover',
+						message: err.response?.data?.detail || 'Erro ao remover funcionário',
+						onConfirm: null
+					});
+				}
+			}
+		});
 	};
 
 	const handleEdit = (employee) => {
@@ -150,24 +187,43 @@ function EmployeesTable() {
 		});
 	};
 
+	// ========== SALVAR EDIÇÃO (COM ALERTMODAL) ==========
 	const handleSave = async () => {
 		try {
-		await employeeService.updateEmployee(editingEmployee.id, {
-			employee_id: parseInt(formData.employee_id),
-			employee_name: formData.employee_name,
-			employee_email: formData.employee_email,
-			hire_date: formData.hire_date
-		});
-		alert('Employee atualizado com sucesso!');
-		const result = await employeeService.getHierarchy();
-		setData(result);
-		handleCloseModal();
+			await employeeService.updateEmployee(editingEmployee.id, {
+				employee_id: parseInt(formData.employee_id),
+				employee_name: formData.employee_name,
+				employee_email: formData.employee_email,
+				hire_date: formData.hire_date
+			});
+			
+			// Mostra sucesso
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: 'Sucesso!',
+				message: 'Funcionário atualizado com sucesso!',
+				onConfirm: null
+			});
+			
+			// Recarrega dados
+			const result = await employeeService.getHierarchy();
+			setData(result);
+			handleCloseModal();
+			
 		} catch (err) {
-		alert(err.response?.data?.detail || 'Erro ao atualizar employee');
+			// Mostra erro
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Atualizar',
+				message: err.response?.data?.detail || 'Erro ao atualizar funcionário',
+				onConfirm: null
+			});
 		}
 	};
 
-	// ========== FUNÇÕES DE CRIAÇÃO ==========
+	// ========== FUNÇÕES DE CRIAÇÃO (COM ALERTMODAL) ==========
 	const handleOpenCreateModal = () => {
 		setCreateFormData({
 			employee_id: '',
@@ -193,11 +249,18 @@ function EmployeesTable() {
 			// Valida campos obrigatórios
 			if (!createFormData.employee_id || !createFormData.employee_name || 
 				!createFormData.employee_email || !createFormData.hire_date) {
-				alert('Todos os campos são obrigatórios!');
+				
+				// Mostra aviso
+				setAlert({
+					isOpen: true,
+					type: 'warning',
+					title: 'Campos Obrigatórios',
+					message: 'Por favor, preencha todos os campos!',
+					onConfirm: null
+				});
 				return;
 			}
 
-			// ========== ADICIONA ESSES LOGS ==========
 			const dataToSend = {
 				employee_id: parseInt(createFormData.employee_id),
 				employee_name: createFormData.employee_name,
@@ -205,19 +268,17 @@ function EmployeesTable() {
 				hire_date: createFormData.hire_date
 			};
 
-			// console.log('====== DADOS QUE VÃO SER ENVIADOS ======');
-			// console.log('createFormData:', createFormData);
-			// console.log('dataToSend:', dataToSend);
-			// console.log('employee_id (int):', dataToSend.employee_id);
-			// console.log('employee_name:', dataToSend.employee_name);
-			// console.log('employee_email:', dataToSend.employee_email);
-			// console.log('hire_date:', dataToSend.hire_date);
-			// console.log('========================================');
-
 			// Cria o employee
 			await employeeService.createEmployee(dataToSend);
 
-			alert('Funcionário criado com sucesso!');
+			// Mostra sucesso
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: 'Sucesso!',
+				message: 'Funcionário criado com sucesso!',
+				onConfirm: null
+			});
 
 			// Recarrega os dados
 			const result = await employeeService.getHierarchy();
@@ -227,11 +288,18 @@ function EmployeesTable() {
 			handleCloseCreateModal();
 
 		} catch (err) {
-			alert(err.response?.data?.detail || 'Erro ao criar funcionário');
+			// Mostra erro
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Criar',
+				message: err.response?.data?.detail || 'Erro ao criar funcionário',
+				onConfirm: null
+			});
 		}
 	};
 
-	// ========== FUNÇÕES DE EMAIL ==========
+	// ========== FUNÇÕES DE EMAIL (COM ALERTMODAL) ==========
 	const handleOpenEmailModal = () => {
 		// Preenche com o email do usuário logado por padrão
 		if (currentUser) {
@@ -246,15 +314,28 @@ function EmployeesTable() {
 	};
 
 	const handleSendEmail = async () => {
+		// Valida campo vazio
 		if (!emailDestination) {
-			alert('Por favor, informe o email de destino!');
+			setAlert({
+				isOpen: true,
+				type: 'warning',
+				title: 'Email Obrigatório',
+				message: 'Por favor, informe o email de destino!',
+				onConfirm: null
+			});
 			return;
 		}
 
 		// Valida formato de email
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(emailDestination)) {
-			alert('Por favor, informe um email válido!');
+			setAlert({
+				isOpen: true,
+				type: 'warning',
+				title: 'Email Inválido',
+				message: 'Por favor, informe um email válido!',
+				onConfirm: null
+			});
 			return;
 		}
 
@@ -263,25 +344,34 @@ function EmployeesTable() {
 		try {
 			const result = await employeeService.sendCalendarEmail(emailDestination);
 			
-			alert(
-			`${result.message}\n\nTotal de funcionários incluídos: ${result.total_employees}`
-			);
+			// Mostra sucesso
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: '✉️ Email Enviado!',
+				message: `${result.message}\n\nTotal de funcionários incluídos: ${result.total_employees}`,
+				onConfirm: null
+			});
 			
 			handleCloseEmailModal();
 			
 		} catch (err) {
-			let errorMessage = 'Erro ao enviar email';
+			let errorMessage = 'Erro desconhecido ao enviar email.';
 			
 			if (typeof err.response?.data?.detail === 'string') {
-			errorMessage = err.response.data.detail;
+				errorMessage = err.response.data.detail;
 			} else if (err.message) {
-			errorMessage = err.message;
-			} else {
-			errorMessage = 'Erro desconhecido ao enviar email. Por favor, entre em contato com bianca.rodrigues@disney.com';
+				errorMessage = err.message;
 			}
 			
-			// Mostra alert com quebra de linha para melhor leitura
-			alert(`❌ ${errorMessage}`);
+			// Mostra erro
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Enviar Email',
+				message: errorMessage,
+				onConfirm: null
+			});
 			
 		} finally {
 			setSendingEmail(false);
@@ -348,7 +438,7 @@ function EmployeesTable() {
 
 	const getSortIcon = (key) => {
 	if (sortConfig.key !== key) {
-		return ' ↕️';  // Sem ordenação
+		return ' ↕️';
 	}
 	return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
 	};
@@ -364,7 +454,7 @@ function EmployeesTable() {
 			</div>
 		)}
 
-		{/* ========== BOTÃO ADICIONAR (NOVO) ========== */}
+		{/* BOTÕES */}
 		{data && (
 			<div className="table-header">
 				<button className="btn-add" onClick={handleOpenCreateModal}>
@@ -507,7 +597,7 @@ function EmployeesTable() {
 			</div>
 		)}
 
-		{/* ========== MODAL DE CRIAÇÃO (NOVO) ========== */}
+		{/* MODAL DE CRIAÇÃO */}
 		{isCreateModalOpen && (
 			<div className="modal-overlay" onClick={handleCloseCreateModal}>
 			<div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -549,7 +639,6 @@ function EmployeesTable() {
 					/>
 				</div>
 
-				{/* Info sobre manager */}
 				{currentUser && (
 					<div className="info-box">
 					<strong>Gestor:</strong> {currentUser.name} {currentUser.surname} ({currentUser.email})
@@ -569,7 +658,7 @@ function EmployeesTable() {
 			</div>
 		)}
 
-		{/* ========== MODAL DE ENVIO DE EMAIL (NOVO) ========== */}
+		{/* MODAL DE ENVIO DE EMAIL */}
 		{isEmailModalOpen && (
 			<div className="modal-overlay" onClick={handleCloseEmailModal}>
 			<div className="modal-content email-modal" onClick={(e) => e.stopPropagation()}>
@@ -613,6 +702,16 @@ function EmployeesTable() {
 			</div>
 			</div>
 		)}
+
+		{/* ========== ALERT MODAL (REUTILIZÁVEL) ========== */}
+		<AlertModal
+			isOpen={alert.isOpen}
+			type={alert.type}
+			title={alert.title}
+			message={alert.message}
+			onClose={() => setAlert({ ...alert, isOpen: false })}
+			onConfirm={alert.onConfirm}
+		/>
 		</div>
 	);
 }

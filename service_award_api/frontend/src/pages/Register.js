@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import './Register.css';
+import AlertModal from '../components/AlertModal';
+
+import Footer from '../components/Footer'; 
 
 function Register() {
 const navigate = useNavigate();
@@ -13,62 +16,100 @@ const [surname, setSurname] = useState('');
 const [password, setPassword] = useState('');
 const [confirmPassword, setConfirmPassword] = useState('');
 const [role, setRole] = useState('USER');
-const [error, setError] = useState('');
 const [loading, setLoading] = useState(false);
 
+const [alert, setAlert] = useState({
+  isOpen: false,
+  type: 'error',
+  title: '',
+  message: '',
+  onConfirm: null
+});
+
 const handleSubmit = async (e) => {
-e.preventDefault();
-setError('');
+  e.preventDefault();
 
-// Validações
-if (!email || !name || !surname || !password || !confirmPassword) {
-	setError('Todos os campos são obrigatórios!');
-	return;
-}
+  // Validações
+  if (!email || !name || !surname || !password || !confirmPassword) {
+    setAlert({
+      isOpen: true,
+      type: 'warning',
+      title: 'Campos Obrigatórios',
+      message: 'Todos os campos são obrigatórios!',
+      onConfirm: null
+    });
+    return;
+  }
 
-if (password !== confirmPassword) {
-	setError('As senhas não coincidem!');
-	return;
-}
+  if (password !== confirmPassword) {
+    setAlert({
+      isOpen: true,
+      type: 'warning',
+      title: 'Senhas Diferentes',
+      message: 'As senhas não coincidem!',
+      onConfirm: null
+    });
+    return;
+  }
 
-if (password.length < 6) {
-	setError('A senha deve ter no mínimo 6 caracteres!');
-	return;
-}
+  if (password.length < 6) {
+    setAlert({
+      isOpen: true,
+      type: 'warning',
+      title: 'Senha Muito Curta',
+      message: 'A senha deve ter no mínimo 6 caracteres!',
+      onConfirm: null
+    });
+    return;
+  }
 
-setLoading(true);
+  setLoading(true);
 
-try {
-	const result = await authService.createUser({
-	email: email,
-	name: name,
-	surname: surname,
-	password: password,
-	role: role
-	});
-	
-	alert(result.message || 'Usuário criado com sucesso!');
-	navigate('/');
-	
-} catch (err) {
-	let errorMessage = 'Erro ao criar usuário';
-	
-	if (Array.isArray(err.response?.data?.detail)) {
-	const errors = err.response.data.detail.map(e => e.msg).join(', ');
-	errorMessage = errors;
-	} 
-	else if (typeof err.response?.data?.detail === 'string') {
-	errorMessage = err.response.data.detail;
-	}
-	else if (err.message) {
-	errorMessage = err.message;
-	}
-	
-	setError(errorMessage);
-	
-} finally {
-	setLoading(false);
-}
+  try {
+    const result = await authService.createUser({
+      email: email,
+      name: name,
+      surname: surname,
+      password: password,
+      role: role
+    });
+    
+    setAlert({
+      isOpen: true,
+      type: 'success',
+      title: 'Conta Criada!',
+      message: result.message || 'Usuário criado com sucesso!',
+      onConfirm: () => {
+        setAlert({ ...alert, isOpen: false });
+        navigate('/');
+      }
+    });
+    
+  } catch (err) {
+    let errorMessage = 'Erro ao criar usuário';
+    
+    if (Array.isArray(err.response?.data?.detail)) {
+      const errors = err.response.data.detail.map(e => e.msg).join(', ');
+      errorMessage = errors;
+    } 
+    else if (typeof err.response?.data?.detail === 'string') {
+      errorMessage = err.response.data.detail;
+    }
+    else if (err.message) {
+      errorMessage = err.message;
+    }
+    
+    setAlert({
+      isOpen: true,
+      type: 'error',
+      title: 'Erro ao Criar Conta',
+      message: errorMessage,
+      onConfirm: null
+    });
+    
+  } finally {
+    setLoading(false);
+  }
 };
 
 return (
@@ -143,13 +184,6 @@ return (
 		</select>
 		</div>
 
-		{/* Mensagem de Erro */}
-		{error && (
-		<div className="error-message">
-			{typeof error === 'string' ? error : 'Erro ao criar usuário'}
-		</div>
-		)}
-
 		{/* Botão */}
 		<button type="submit" disabled={loading} className="btn-submit">
 		{loading ? 'Criando...' : 'Criar Usuário'}
@@ -161,6 +195,17 @@ return (
 		← Voltar para o login
 	</button>
 	</div>
+
+	{/* ========== ALERT MODAL (REUTILIZÁVEL) ========== */}
+    <AlertModal
+      isOpen={alert.isOpen}
+      type={alert.type}
+      title={alert.title}
+      message={alert.message}
+      onClose={() => setAlert({ ...alert, isOpen: false })}
+      onConfirm={alert.onConfirm}
+    />
+    <Footer />
 </div>
 );
 }

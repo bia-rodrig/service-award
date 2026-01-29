@@ -1,0 +1,151 @@
+/* ========== OVERLAY ESCURO ========== */
+.alert-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ========== CONTEÚDO DO MODAL ========== */
+.alert-modal-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ========== ÍCONE ========== */
+.alert-modal-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ========== TÍTULO ========== */
+.alert-modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+/* ========== MENSAGEM ========== */
+.alert-modal-message {
+  color: #555;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  white-space: pre-line;
+}
+
+/* ========== BOTÕES ========== */
+.alert-modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.alert-modal-btn {
+  border: none;
+  padding: 12px 40px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+/* Botão único (success, error, warning) */
+.alert-modal-btn-single {
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.alert-modal-btn-single:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Botão Cancelar (question) */
+.alert-modal-btn-cancel {
+  background-color: #9e9e9e;
+  color: white;
+}
+
+.alert-modal-btn-cancel:hover {
+  background-color: #757575;
+}
+
+/* Botão Confirmar (question) */
+.alert-modal-btn-confirm {
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.alert-modal-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.alert-modal-btn:active {
+  transform: translateY(0);
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 768px) {
+  .alert-modal-content {
+    padding: 30px 20px;
+  }
+
+  .alert-modal-icon {
+    font-size: 50px;
+  }
+
+  .alert-modal-title {
+    font-size: 20px;
+  }
+
+  .alert-modal-message {
+    font-size: 14px;
+  }
+
+  .alert-modal-buttons {
+    flex-direction: column;
+  }
+
+  .alert-modal-btn {
+    width: 100%;
+  }
+}

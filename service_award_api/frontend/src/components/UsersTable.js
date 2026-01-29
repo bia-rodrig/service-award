@@ -4,6 +4,10 @@ import { MdLockReset } from 'react-icons/md';
 import { FaTrash } from 'react-icons/fa';
 import './UsersTable.css';
 
+import AlertModal from './AlertModal'
+
+
+
 function UsersTable() {
 	// ========== ESTADOS ==========
 	const [data, setData] = useState([]);
@@ -12,6 +16,14 @@ function UsersTable() {
 	const [editingUserId, setEditingUserId] = useState(null);
 	//null -> nenhum usuário em edição
 	//numero -> id do usuário sendo editado
+
+	const [alert, setAlert] = useState({
+		isOpen: false,
+		type: 'error',
+		title: '',
+		message: '',
+		onConfirm: null
+	});
 
 	// ========== BUSCAR USUÁRIOS ==========
 	useEffect(() => {
@@ -30,46 +42,76 @@ function UsersTable() {
 
 	// ========== RESETAR SENHA ==========
 	const handleResetPassword = async (user) => {
-	const confirmReset = window.confirm(
-		`Tem certeza que deseja resetar a senha de ${user.name} ${user.surname}?\n\nA senha será alterada para o padrão e o usuário será desativado.`
-	);
-
-	if (!confirmReset) {
-		return;
-	}
-
-	try{
-		const result = await adminService.resetPassword(user.id);
-		alert(result.message || 'Senha resetada com sucesso!');
-		
-		// Recarrega os dados
-		const newData = await adminService.getAllUsers();
-		setData(newData);
-	} catch (err){
-		alert(err.response?.data?.detail || 'Erro ao resetar senha');
-	}
+		// Abre modal de confirmação
+		setAlert({
+			isOpen: true,
+			type: 'question',
+			title: 'Resetar Senha',
+			message: `Tem certeza que deseja resetar a senha de ${user.name} ${user.surname}?\n\nA senha será alterada para o padrão e o usuário será desativado.`,
+			onConfirm: async () => {
+				setAlert({ ...alert, isOpen: false });
+				
+				try {
+					const result = await adminService.resetPassword(user.id);
+					
+					setAlert({
+						isOpen: true,
+						type: 'success',
+						title: 'Sucesso!',
+						message: result.message || 'Senha resetada com sucesso!',
+						onConfirm: null
+					});
+					
+					const newData = await adminService.getAllUsers();
+					setData(newData);
+					
+				} catch (err) {
+					setAlert({
+						isOpen: true,
+						type: 'error',
+						title: 'Erro ao Resetar',
+						message: err.response?.data?.detail || 'Erro ao resetar senha',
+						onConfirm: null
+					});
+				}
+			}
+		});
 	};
 
 	// ========== DELETAR USUÁRIO ==========
 	const handleDelete = async (user) => {
-		const confirmDelete = window.confirm(
-			`Tem certeza que deseja remover ${user.name} ${user.surname}?\n\nEsta ação não pode ser desfeita.`
-		);
-
-		if (!confirmDelete) {
-			return;
-		}
-
-		try{
-			await adminService.deleteUser(user.id);
-			alert(`${user.name} ${user.surname} foi removido com sucesso!`);
-			
-			// Recarrega os dados
-			const newData = await adminService.getAllUsers();
-			setData(newData);
-		} catch (err){
-			alert(err.response?.data?.detail || 'Erro ao remover usuário');
-		}
+		setAlert({
+			isOpen: true,
+			type: 'question',
+			title: 'Confirmar Exclusão',
+			message: `Tem certeza que deseja remover ${user.name} ${user.surname}?\n\nEsta ação não pode ser desfeita.`,
+			onConfirm: async () => {
+				setAlert({ ...alert, isOpen: false });
+				try{
+					await adminService.deleteUser(user.id);
+					
+					setAlert({
+						isOpen: true,
+						type: 'success',
+						title: 'Sucesso!',
+						message: `${user.name} ${user.surname} foi removido com sucesso!`,
+						onConfirm: null
+					});
+					
+					// Recarrega os dados
+					const newData = await adminService.getAllUsers();
+					setData(newData);
+				} catch (err){
+					setAlert({
+						isOpen: true,
+						type: 'error',
+						title: 'Erro ao Remover',
+						message: err.response?.data?.detail || 'Erro ao remover usuário',
+						onConfirm: null
+					});
+				}
+			}			
+		});
 	};
 
 	// ========== ATUALIZAR ROLE ==========
@@ -85,10 +127,22 @@ function UsersTable() {
 			// Para de editar
 			setEditingUserId(null);
 
-			alert('Permissão atualizada com sucesso!');
+			setAlert({
+				isOpen: true,
+				type: 'success',
+				title: 'Sucesso!',
+				message: 'Permissão atualizada com sucesso!',
+				onConfirm: null
+			});
 
 		} catch (err) {
-			alert(err.response?.data?.detail || 'Erro ao atualizar permissão');
+			setAlert({
+				isOpen: true,
+				type: 'error',
+				title: 'Erro ao Atualizar',
+				message: err.response?.data?.detail || 'Erro ao atualizar permissão',
+				onConfirm: null
+			});
 			setEditingUserId(null);
 		}
 	};
@@ -175,6 +229,15 @@ function UsersTable() {
 			</table>
 		</div>
 		)}
+		{/* ========== ALERT MODAL (REUTILIZÁVEL) ========== */}
+		<AlertModal
+			isOpen={alert.isOpen}
+			type={alert.type}
+			title={alert.title}
+			message={alert.message}
+			onClose={() => setAlert({ ...alert, isOpen: false })}
+			onConfirm={alert.onConfirm}
+		/>
 	</div>
 	);
 }

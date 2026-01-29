@@ -14,7 +14,7 @@ app = FastAPI()
 # cria tabelas do banco 
 models.Base.metadata.create_all(bind=engine)
 
-# CORS para desenvolvimento (quando React roda em localhost:3000) - DEV
+#CORS para desenvolvimento (quando React roda em localhost:3000) - DEV
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=["http://localhost:3000"],  # Frontend
@@ -24,7 +24,8 @@ models.Base.metadata.create_all(bind=engine)
 # )
 
 
-# CORS para desenvolvimento E produção
+#=== PRODUÇÃO
+#CORS para desenvolvimento E produção
 # Em produção, o frontend está no mesmo servidor, então não precisa de CORS
 # Mas deixamos configurado para aceitar localhost (dev) e o IP do servidor (produção)
 app.add_middleware(
